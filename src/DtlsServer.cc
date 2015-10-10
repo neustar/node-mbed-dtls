@@ -7,7 +7,7 @@
 
 using namespace node;
 
-#define DEBUG_LEVEL 0
+#define DEBUG_LEVEL 5
 
 static void my_debug( void *ctx, int level,
                       const char *file, int line,
@@ -35,13 +35,13 @@ DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 NAN_METHOD(DtlsServer::New) {
-	size_t key_len = Buffer::Length(info[0]);
-  size_t cert_len = Buffer::Length(info[1]);
+  size_t cert_len = Buffer::Length(info[0]);
+  size_t key_len = Buffer::Length(info[1]);
 
-  const unsigned char *key = (const unsigned char *)Buffer::Data(info[0]);
-  const unsigned char *cert = (const unsigned char *)Buffer::Data(info[1]);
+  const unsigned char *cert = (const unsigned char *)Buffer::Data(info[0]);
+  const unsigned char *key = (const unsigned char *)Buffer::Data(info[1]);  
 
-	DtlsServer *server = new DtlsServer(key, key_len, cert, cert_len);
+	DtlsServer *server = new DtlsServer(cert, cert_len, key, key_len);
   server->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
 }
@@ -65,23 +65,14 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt, size_t srv_crt_len,
   mbedtls_debug_set_threshold( DEBUG_LEVEL );
 #endif
 
-  ret = mbedtls_x509_crt_parse_der( &srvcert, srv_crt,
-                        srv_crt_len );
+  ret = mbedtls_pk_parse_public_key( &pkey, (const unsigned char *)srv_crt, srv_crt_len );
   if( ret != 0 )
   {
-    printf( " failed\n  !  mbedtls_x509_crt_parse_der returned %d\n\n", ret );
+    printf( " failed\n  !  mbedtls_pk_parse_public_key %d returned %d\n\n", (int)srv_crt_len, ret );
     goto exit;
   }
-
-  // ret = mbedtls_x509_crt_parse_der( &srvcert, cas_pem,
-  //                       cas_pem_len );
-  // if( ret != 0 )
-  // {
-  //   printf( " failed\n  !  mbedtls_x509_crt_parse_der returned %d\n\n", ret );
-  //   goto exit;
-  // }
-
-  ret =  mbedtls_pk_parse_key( &pkey, srv_key,
+  
+  ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *)srv_key,
                        srv_key_len, NULL, 0 );
   if( ret != 0 )
   {
@@ -115,7 +106,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt, size_t srv_crt_len,
                                    mbedtls_ssl_cache_set );
 #endif
 
-  mbedtls_ssl_conf_ca_chain( &conf, srvcert.next, NULL );
   if( ( ret = mbedtls_ssl_conf_own_cert( &conf, &srvcert, &pkey ) ) != 0 )
   {
     printf( " failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret );
@@ -131,6 +121,9 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt, size_t srv_crt_len,
 
   mbedtls_ssl_conf_dtls_cookies( &conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
                               &cookie_ctx );
+
+  // needed for server to send CertificateRequest
+  mbedtls_ssl_conf_authmode( &conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
 
 exit:
 	if( ret != 0 )

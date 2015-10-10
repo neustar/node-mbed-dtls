@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "mbedtls/ssl_internal.h"
+
 using namespace node;
 
 Nan::Persistent<v8::FunctionTemplate> DtlsSocket::constructor;
@@ -29,9 +31,11 @@ NAN_METHOD(DtlsSocket::New) {
 	DtlsServer *server = Nan::ObjectWrap::Unwrap<DtlsServer>(Nan::To<v8::Object>(info[0]).ToLocalChecked());
 	Nan::Utf8String client_ip(info[1]);
 
-	Nan::Callback* cb = new Nan::Callback(info[2].As<v8::Function>());
+	Nan::Callback* send_cb = new Nan::Callback(info[2].As<v8::Function>());
+	Nan::Callback* hs_cb = new Nan::Callback(info[3].As<v8::Function>());
+	Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
 
-	DtlsSocket *socket = new DtlsSocket(server, (unsigned char *)*client_ip, client_ip.length(), cb);
+	DtlsSocket *socket = new DtlsSocket(server, (unsigned char *)*client_ip, client_ip.length(), send_cb, hs_cb, error_cb);
   socket->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
 }
@@ -72,9 +76,19 @@ int net_recv( void *ctx, unsigned char *buf, size_t len ) {
 	return socket->recv(buf, len);
 }
 
-DtlsSocket::DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t client_ip_len, Nan::Callback* callback): Nan::ObjectWrap() {
-	send_cb = callback;
+DtlsSocket::DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t client_ip_len, 
+	Nan::Callback* send_callback, Nan::Callback* hs_callback, Nan::Callback* error_callback): Nan::ObjectWrap() {
+	send_cb = send_callback;
+	error_cb = error_callback;
+	handshake_cb = hs_callback;
 	int ret;
+
+  if( ( ip = (unsigned char *)calloc( 1, client_ip_len ) ) == NULL ) {
+    //return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+    goto exit;
+  }
+  memcpy( ip, client_ip, client_ip_len );
+  ip_len = client_ip_len;
 	
 	mbedtls_ssl_init(&ssl_context);
 	ssl_config = server->config();
@@ -86,35 +100,41 @@ DtlsSocket::DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t clie
   }
 
   mbedtls_ssl_set_timer_cb( &ssl_context, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay );
-
-  mbedtls_ssl_session_reset( &ssl_context );
-
-  /* For HelloVerifyRequest cookies */
-  if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl_context,
-                  client_ip, client_ip_len ) ) != 0 )
-  {
-      printf( " failed\n  ! "
-              "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret );
-      goto exit;
-  }
-
   mbedtls_ssl_set_bio( &ssl_context, this,
                        net_send, net_recv, NULL );
+  reset();
 exit:
 	return;
 }
 
+void DtlsSocket::reset() {
+	int ret;
+	mbedtls_ssl_session_reset( &ssl_context );
+
+  /* For HelloVerifyRequest cookies */
+  if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl_context,
+                  ip, ip_len ) ) != 0 )
+  {
+      printf( " failed\n  ! "
+              "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret );
+      return;
+  }  
+}
+
 int DtlsSocket::send_encrypted(const unsigned char *buf, size_t len) {
+	printf("send %d\n", (int)len);
 	v8::Local<v8::Value> argv[] = {
-		Nan::NewBuffer((char *)buf, len).ToLocalChecked()
+		Nan::CopyBuffer((char *)buf, len).ToLocalChecked()
 	};
 	send_cb->Call(1, argv);
-	return 0;
+	return len;
 }
 
 int DtlsSocket::recv(unsigned char *buf, size_t len) {
-	if (len <= recv_len) {
-		memcpy(buf, recv_buf, len);
+	printf("recv need: %d have: %d\n", (int)len, (int)recv_len);
+	if (recv_len != 0) {
+		len = recv_len;
+		memcpy(buf, recv_buf, recv_len);
 		recv_buf = NULL;
 		recv_len = 0;
 		return len;
@@ -132,46 +152,73 @@ int DtlsSocket::send(const unsigned char *buf, size_t len) {
     return ret;
   }
   len = ret;
-  printf( " %d bytes written\n\n%s\n\n", (int)len, buf );  
+  //printf( " %d bytes written\n\n%s\n\n", (int)len, buf );  
   return ret;
 }
 
 int DtlsSocket::receive_data(unsigned char *buf, int len) {
+	printf("receive_data\n");
 	int ret;
 
-	// handshake
-	if (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-		ret = mbedtls_ssl_handshake_step(&ssl_context);		
+	if (ssl_context.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
+		// normal reading of unencrypted data	
+		memset( buf, 0, len );
+		ret = mbedtls_ssl_read( &ssl_context, buf, len );
+		if (ret <= 0) {
+			printf( " mbedtls_ssl_read returned -0x%x\n\n", -ret );
+	    return 0;
+		}
+		return ret;
+	}
 
-		if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
+	// handshake
+	while (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		ret = mbedtls_ssl_handshake_step(&ssl_context);
+		if (ret == 0) {			
+			// in these states we are waiting for more input
+			if (
+				ssl_context.state == MBEDTLS_SSL_SERVER_HELLO_VERIFY_REQUEST_SENT ||
+				ssl_context.state == MBEDTLS_SSL_CLIENT_CERTIFICATE ||
+				ssl_context.state == MBEDTLS_SSL_CLIENT_KEY_EXCHANGE ||
+				ssl_context.state == MBEDTLS_SSL_CERTIFICATE_VERIFY ||
+				ssl_context.state == MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC ||
+				ssl_context.state == MBEDTLS_SSL_CLIENT_FINISHED
+				) {
+				return 0;
+			}
+			// keep looping to send everything
+			continue;
+		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 			printf( " hello verification requested\n" );
-	    ret = 0;
-	    mbedtls_ssl_session_reset( &ssl_context );
-	    // TODO this should really close down everything
+	    reset();
+	    continue;
 		}
 		else if (ret != 0) {
 			// bad things
-			printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret );
-			mbedtls_ssl_session_reset( &ssl_context );
+			error(ret);			
+			reset();
 			// TODO this should really close down everything
+			return 0;
 		}
-
-		return 0;
 	}
 
-	// normal reading of unencrypted data	
-	memset( buf, 0, len );
-	ret = mbedtls_ssl_read( &ssl_context, buf, len );
-	if (ret <= 0) {
-		printf( " mbedtls_ssl_read returned -0x%x\n\n", -ret );
-    goto reset;
-	}
+	// this should only be called once when we first finish the handshake
+	handshake_cb->Call(0, NULL);
+	return 0;
+}
 
-reset:
-	return ret;
+void DtlsSocket::error(int ret) {
+	char error_buf[100];
+  mbedtls_strerror( ret, error_buf, 100 );
+  v8::Local<v8::Value> argv[] = {
+  	Nan::New(ret),
+		Nan::New(error_buf).ToLocalChecked()
+	};
+	error_cb->Call(2, argv);
 }
 
 void DtlsSocket::store_data(const unsigned char *buf, size_t len) {
+	printf("store_data %d\n", (int)len);
 	recv_buf = buf;
 	recv_len = len;
 }

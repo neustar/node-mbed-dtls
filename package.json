@@ -5,12 +5,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp rebuild"
+    "install": "node-gyp rebuild",
+    "build": "node-gyp build",
+    "start": "node index.js"
   },
   "author": "Bryce Kahle",
   "license": "Apache-2.0",
   "gypfile": true,
   "dependencies": {
     "nan": "^2.0.9"
+  },
+  "devDependencies": {
+    "node-gyp": "^3.0.3"
   }
 }

@@ -17,25 +17,31 @@ public:
 	static NAN_METHOD(ReceiveDataFromNode);
 	static NAN_METHOD(Close);
 	static NAN_METHOD(Send);
-	DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t client_ip_len, Nan::Callback* callback);
+	DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t client_ip_len, 
+		Nan::Callback* send_callback, Nan::Callback* hs_callback, Nan::Callback* error_callback);
 	int send_encrypted(const unsigned char *buf, size_t len);
 	int recv(unsigned char *buf, size_t len);
 	int send(const unsigned char *buf, size_t len);
 	int receive_data(unsigned char *buf, int len);
 	void store_data(const unsigned char *buf, size_t len);
 	void close();
+	void error(int ret);
+	void reset();
 
 private:
 	~DtlsSocket();
 	Nan::Callback* send_cb;
+	Nan::Callback* error_cb;
+	Nan::Callback* handshake_cb;
 	mbedtls_ssl_context ssl_context;
 	mbedtls_timing_delay_context timer;
 
 	mbedtls_ssl_config* ssl_config;
 	const unsigned char *recv_buf;
 	size_t recv_len;
-
-
+	
+	unsigned char *ip;
+	size_t ip_len;
 };
 
 #endif
