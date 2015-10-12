@@ -15,16 +15,16 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::HandleScope scope;
 
 	// Constructor
-  v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(DtlsSocket::New);
-  constructor.Reset(ctor);
-  ctor->InstanceTemplate()->SetInternalFieldCount(1);
-  ctor->SetClassName(Nan::New("DtlsSocket").ToLocalChecked());
-  
-  Nan::SetPrototypeMethod(ctor, "receiveData", ReceiveDataFromNode);
-  Nan::SetPrototypeMethod(ctor, "close", Close);
-  Nan::SetPrototypeMethod(ctor, "send", Send);
+	v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(DtlsSocket::New);
+	constructor.Reset(ctor);
+	ctor->InstanceTemplate()->SetInternalFieldCount(1);
+	ctor->SetClassName(Nan::New("DtlsSocket").ToLocalChecked());
+	
+	Nan::SetPrototypeMethod(ctor, "receiveData", ReceiveDataFromNode);
+	Nan::SetPrototypeMethod(ctor, "close", Close);
+	Nan::SetPrototypeMethod(ctor, "send", Send);
 
-  Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
+	Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
 }
 
 NAN_METHOD(DtlsSocket::New) {
@@ -36,8 +36,8 @@ NAN_METHOD(DtlsSocket::New) {
 	Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
 
 	DtlsSocket *socket = new DtlsSocket(server, (unsigned char *)*client_ip, client_ip.length(), send_cb, hs_cb, error_cb);
-  socket->Wrap(info.This());
-  info.GetReturnValue().Set(info.This());
+	socket->Wrap(info.This());
+	info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(DtlsSocket::ReceiveDataFromNode) {
@@ -83,26 +83,26 @@ DtlsSocket::DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t clie
 	handshake_cb = hs_callback;
 	int ret;
 
-  if( ( ip = (unsigned char *)calloc( 1, client_ip_len ) ) == NULL ) {
-    //return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
-    goto exit;
-  }
-  memcpy( ip, client_ip, client_ip_len );
-  ip_len = client_ip_len;
+	if( ( ip = (unsigned char *)calloc( 1, client_ip_len ) ) == NULL ) {
+		//return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+		goto exit;
+	}
+	memcpy( ip, client_ip, client_ip_len );
+	ip_len = client_ip_len;
 	
 	mbedtls_ssl_init(&ssl_context);
 	ssl_config = server->config();
 
 	if( ( ret = mbedtls_ssl_setup( &ssl_context, ssl_config ) ) != 0 )
-  {
-    printf( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
-    goto exit;
-  }
+	{
+		printf( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
+		goto exit;
+	}
 
-  mbedtls_ssl_set_timer_cb( &ssl_context, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay );
-  mbedtls_ssl_set_bio( &ssl_context, this,
-                       net_send, net_recv, NULL );
-  reset();
+	mbedtls_ssl_set_timer_cb( &ssl_context, &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay );
+	mbedtls_ssl_set_bio( &ssl_context, this,
+											 net_send, net_recv, NULL );
+	reset();
 exit:
 	return;
 }
@@ -111,14 +111,14 @@ void DtlsSocket::reset() {
 	int ret;
 	mbedtls_ssl_session_reset( &ssl_context );
 
-  /* For HelloVerifyRequest cookies */
-  if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl_context,
-                  ip, ip_len ) ) != 0 )
-  {
-      printf( " failed\n  ! "
-              "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret );
-      return;
-  }  
+	/* For HelloVerifyRequest cookies */
+	if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl_context,
+									ip, ip_len ) ) != 0 )
+	{
+			printf( " failed\n  ! "
+							"mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", -ret );
+			return;
+	}  
 }
 
 int DtlsSocket::send_encrypted(const unsigned char *buf, size_t len) {
@@ -147,13 +147,13 @@ int DtlsSocket::send(const unsigned char *buf, size_t len) {
 	int ret;
 	ret = mbedtls_ssl_write( &ssl_context, buf, len );
 	if( ret < 0 )
-  {
-    printf( " failed\n  ! mbedtls_ssl_write returned %d\n\n", ret );
-    return ret;
-  }
-  len = ret;
-  //printf( " %d bytes written\n\n%s\n\n", (int)len, buf );  
-  return ret;
+	{
+		printf( " failed\n  ! mbedtls_ssl_write returned %d\n\n", ret );
+		return ret;
+	}
+	len = ret;
+	//printf( " %d bytes written\n\n%s\n\n", (int)len, buf );  
+	return ret;
 }
 
 int DtlsSocket::receive_data(unsigned char *buf, int len) {
@@ -166,7 +166,7 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 		ret = mbedtls_ssl_read( &ssl_context, buf, len );
 		if (ret <= 0) {
 			printf( " mbedtls_ssl_read returned -0x%x\n\n", -ret );
-	    return 0;
+			return 0;
 		}
 		return ret;
 	}
@@ -190,8 +190,8 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 			continue;
 		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 			printf( " hello verification requested\n" );
-	    reset();
-	    continue;
+			reset();
+			continue;
 		}
 		else if (ret != 0) {
 			// bad things
@@ -209,9 +209,9 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 
 void DtlsSocket::error(int ret) {
 	char error_buf[100];
-  mbedtls_strerror( ret, error_buf, 100 );
-  v8::Local<v8::Value> argv[] = {
-  	Nan::New(ret),
+	mbedtls_strerror( ret, error_buf, 100 );
+	v8::Local<v8::Value> argv[] = {
+		Nan::New(ret),
 		Nan::New(error_buf).ToLocalChecked()
 	};
 	error_cb->Call(2, argv);
