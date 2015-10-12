@@ -13,12 +13,16 @@ class DtlsSocket : public Nan::ObjectWrap {
 public:
 	static Nan::Persistent<v8::FunctionTemplate> constructor;
 	static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
-	static NAN_METHOD(New);
-	static NAN_METHOD(ReceiveDataFromNode);
-	static NAN_METHOD(Close);
-	static NAN_METHOD(Send);
-	DtlsSocket(DtlsServer *server, unsigned char *client_ip, size_t client_ip_len, 
-		Nan::Callback* send_callback, Nan::Callback* hs_callback, Nan::Callback* error_callback);
+	static void New(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static void ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	DtlsSocket(DtlsServer *server,
+						 unsigned char *client_ip,
+						 size_t client_ip_len,
+						 Nan::Callback* send_callback,
+						 Nan::Callback* hs_callback,
+						 Nan::Callback* error_callback);
 	int send_encrypted(const unsigned char *buf, size_t len);
 	int recv(unsigned char *buf, size_t len);
 	int send(const unsigned char *buf, size_t len);
@@ -29,17 +33,16 @@ public:
 	void reset();
 
 private:
+	void throwError(int ret);
 	~DtlsSocket();
 	Nan::Callback* send_cb;
 	Nan::Callback* error_cb;
 	Nan::Callback* handshake_cb;
 	mbedtls_ssl_context ssl_context;
 	mbedtls_timing_delay_context timer;
-
 	mbedtls_ssl_config* ssl_config;
 	const unsigned char *recv_buf;
-	size_t recv_len;
-	
+	size_t recv_len;	
 	unsigned char *ip;
 	size_t ip_len;
 };

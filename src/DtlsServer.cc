@@ -76,14 +76,14 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	ret = mbedtls_pk_parse_public_key(&pkey,
 																		(const unsigned char *)srv_crt,
 																		srv_crt_len);
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 	
 	ret = mbedtls_pk_parse_key(&pkey,
 														 (const unsigned char *)srv_key,
 														 srv_key_len,
 														 NULL,
 														 0);
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 
 	// TODO re-use node entropy and randomness
 	ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
@@ -91,13 +91,13 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 															&entropy,
 															(const unsigned char *) pers,
 															strlen(pers));
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 
 	ret = mbedtls_ssl_config_defaults(&conf,
 																		MBEDTLS_SSL_IS_SERVER,
 																		MBEDTLS_SSL_TRANSPORT_DATAGRAM,
 																		MBEDTLS_SSL_PRESET_DEFAULT);
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 
 	// TODO use node random number generator?
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
@@ -113,12 +113,12 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 #endif
 
 	ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 
 	ret = mbedtls_ssl_cookie_setup(&cookie_ctx,
 																 mbedtls_ctr_drbg_random,
 																 &ctr_drbg);
-	if (ret != 0) throwError(ret);
+	if (ret != 0) goto exit;
 
 	mbedtls_ssl_conf_dtls_cookies(&conf,
 																mbedtls_ssl_cookie_write,
@@ -130,6 +130,9 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 
 	// TODO turn off server sending Certificate
 
+	return;
+exit:
+	throwError(ret);
 	return;
 }
 
