@@ -7,8 +7,6 @@
 
 using namespace node;
 
-#define DEBUG_LEVEL 5
-
 static void my_debug( void *ctx, int level,
 											const char *file, int line,
 											const char *str )
@@ -45,9 +43,14 @@ void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	size_t key_len = Buffer::Length(info[1]);
 
 	const unsigned char *cert = (const unsigned char *)Buffer::Data(info[0]);
-	const unsigned char *key = (const unsigned char *)Buffer::Data(info[1]);  
+	const unsigned char *key = (const unsigned char *)Buffer::Data(info[1]);
 
-	DtlsServer *server = new DtlsServer(cert, cert_len, key, key_len);
+	int debug_level = 0;
+	if (info.Length() > 2) {
+		debug_level = info[2]->Uint32Value();
+	}
+
+	DtlsServer *server = new DtlsServer(cert, cert_len, key, key_len, debug_level);
 	server->Wrap(info.This());
 	info.GetReturnValue().Set(info.This());
 }
@@ -55,7 +58,8 @@ void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 DtlsServer::DtlsServer(const unsigned char *srv_crt,
 											 size_t srv_crt_len,
 											 const unsigned char *srv_key,
-											 size_t srv_key_len)
+											 size_t srv_key_len,
+											 int debug_level)
 		: Nan::ObjectWrap() {
 	int ret;
 	const char *pers = "dtls_server";
@@ -70,7 +74,7 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 
 #if defined(MBEDTLS_DEBUG_C)
-	mbedtls_debug_set_threshold(DEBUG_LEVEL);
+	mbedtls_debug_set_threshold(debug_level);
 #endif
 
 	ret = mbedtls_pk_parse_public_key(&pkey,
@@ -101,7 +105,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 
 	// TODO use node random number generator?
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-	// TODO expose debug output as a flag?
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 
 #if defined(MBEDTLS_SSL_CACHE_C)

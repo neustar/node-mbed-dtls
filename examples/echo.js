@@ -5,7 +5,8 @@ var dtls = require('../index');
 
 const opts = {
 	cert: path.join(__dirname, '../test/public.der'),
-	key: path.join(__dirname, '../test/private.der')
+	key: path.join(__dirname, '../test/private.der'),
+	debug: 5
 };
 
 const dtlsserver = dtls.createServer(opts, socket => {
@@ -26,6 +27,7 @@ dtlsserver.on('error', err => {
 	console.error(err);
 });
 dtlsserver.on('listening', () => {
-	console.log('dtls listening on', dtlsserver.address());
+	const addr = dtlsserver.address();
+	console.log(`dtls listening on ${addr.address}:${addr.port}`);
 });
 dtlsserver.listen(5683);

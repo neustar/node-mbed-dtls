@@ -25,7 +25,8 @@ public:
 	DtlsServer(const unsigned char *srv_crt,
 						 size_t srv_crt_len,
 						 const unsigned char *srv_key,
-						 size_t srv_key_len);
+						 size_t srv_key_len,
+						 int debug_level = 0);
 	inline mbedtls_ssl_config* config() { return &conf; }
 
 private:
