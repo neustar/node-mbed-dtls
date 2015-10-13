@@ -4,7 +4,7 @@
   "description": "Node mbed DTLS",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/server.js",
     "install": "node-gyp rebuild",
     "build": "node-gyp build",
     "start": "node index.js"
@@ -16,6 +16,9 @@
     "nan": "^2.0.9"
   },
   "devDependencies": {
-    "node-gyp": "^3.0.3"
+    "mocha": "^2.3.3",
+    "node-gyp": "^3.0.3",
+    "should": "^7.1.0",
+    "sinon": "^1.17.1"
   }
 }
