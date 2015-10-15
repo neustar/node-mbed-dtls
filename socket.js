@@ -61,8 +61,8 @@ class DtlsSocket extends EventEmitter {
 		this.close();
 	}
 
-	_resumeSession(session) {
-		this.server.emit('resumeSession', session.id.toString('hex'), this._resumeSessionCallback.bind(this));
+	_resumeSession(sessionId) {
+		this.server.emit('resumeSession', sessionId.toString('hex'), this._resumeSessionCallback.bind(this));
 	}
 
 	_resumeSessionCallback(err, data) {

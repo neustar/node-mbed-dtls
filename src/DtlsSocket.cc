@@ -223,9 +223,9 @@ void DtlsSocket::get_session_cache(mbedtls_ssl_session *session) {
 	Nan::HandleScope scope;
 	session_wait = true;
 
-	v8::Local<v8::Object> sess = SessionWrap::CreateFromSession(session);
+	v8::Local<v8::Object> session_id = Nan::CopyBuffer((const char *)session->id, session->id_len).ToLocalChecked();
 	const unsigned argc = 1;
-	v8::Local<v8::Value> argv[argc] = { sess };
+	v8::Local<v8::Value> argv[argc] = { session_id };
 	resume_sess_cb->Call(1, argv);
 }
 
