@@ -23,7 +23,8 @@ class DtlsSocket extends EventEmitter {
 			this._sendEncrypted.bind(this),
 			this._handshakeComplete.bind(this),
 			this._error.bind(this),
-			this._resumeSession.bind(this));
+			this._resumeSession.bind(this),
+			this._newSession.bind(this));
 	}
 
 	send(msg) {
@@ -57,19 +58,31 @@ class DtlsSocket extends EventEmitter {
 		}
 
 		this.emit('error', code, msg);
-		this.removeAllListeners();
+		this.close();
 	}
 
 	_resumeSession(session) {
-		this.server.emit('resumeSession', session, this._resumeSessionCallback.bind(this));
+		this.server.emit('resumeSession', session.id.toString('hex'), this._resumeSessionCallback.bind(this));
 	}
 
 	_resumeSessionCallback(err, data) {
 		if (err) {
-
+			this.close();
 			return;
 		}
 		this.mbedSocket.resumeSession(data || undefined);
+	}
+
+	_newSession(session) {
+		this.server.emit('newSession', session.id.toString('hex'), session, this._newSessionCallback.bind(this));
+	}
+
+	_newSessionCallback(err) {
+		if (err) {
+			this.close();
+			return;
+		}
+		this.mbedSocket.newSession();
 	}
 
 	receive(msg) {

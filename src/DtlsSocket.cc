@@ -24,6 +24,7 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::SetPrototypeMethod(ctor, "close", Close);
 	Nan::SetPrototypeMethod(ctor, "send", Send);
 	Nan::SetPrototypeMethod(ctor, "resumeSession", ResumeSession);
+	Nan::SetPrototypeMethod(ctor, "newSession", NewSession);
 
 	Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
 }
@@ -42,6 +43,7 @@ void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	Nan::Callback* hs_cb = new Nan::Callback(info[3].As<v8::Function>());
 	Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
 	Nan::Callback* resume_cb = new Nan::Callback(info[5].As<v8::Function>());
+	Nan::Callback* new_cb = new Nan::Callback(info[6].As<v8::Function>());
 
 	DtlsSocket *socket = new DtlsSocket(server,
 																			(unsigned char *)*client_ip,
@@ -49,7 +51,8 @@ void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 																			send_cb,
 																			hs_cb,
 																			error_cb,
-																			resume_cb);
+																			resume_cb,
+																			new_cb);
 	socket->Wrap(info.This());
 	info.GetReturnValue().Set(info.This());
 }
@@ -94,6 +97,11 @@ void DtlsSocket::ResumeSession(const Nan::FunctionCallbackInfo<v8::Value>& info)
 	socket->resume_session(&tls_session);
 }
 
+void DtlsSocket::NewSession(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
+	socket->resume_session();
+}
+
 int net_send( void *ctx, const unsigned char *buf, size_t len ) {
 	DtlsSocket* socket = (DtlsSocket*)ctx;
 	return socket->send_encrypted(buf, len);
@@ -110,12 +118,14 @@ DtlsSocket::DtlsSocket(DtlsServer *server,
 											 Nan::Callback* send_callback,
 											 Nan::Callback* hs_callback,
 											 Nan::Callback* error_callback,
-											 Nan::Callback* resume_sess_callback)
+											 Nan::Callback* resume_sess_callback,
+											 Nan::Callback* new_sess_callback)
 		: Nan::ObjectWrap(),		
 		send_cb(send_callback),
 		error_cb(error_callback),
 		handshake_cb(hs_callback),
 		resume_sess_cb(resume_sess_callback),
+		new_sess_cb(new_sess_callback),
 		session_wait(false) {
 	int ret;
 
@@ -219,6 +229,16 @@ void DtlsSocket::get_session_cache(mbedtls_ssl_session *session) {
 	resume_sess_cb->Call(1, argv);
 }
 
+void DtlsSocket::save_session_cache(mbedtls_ssl_session *session) {
+	Nan::HandleScope scope;
+	session_wait = true;
+
+	v8::Local<v8::Object> sess = SessionWrap::CreateFromSession(session);
+	const unsigned argc = 1;
+	v8::Local<v8::Value> argv[argc] = { sess };
+	new_sess_cb->Call(1, argv);
+}
+
 void DtlsSocket::resume_session() {
 	session_wait = false;
 	step();
@@ -250,8 +270,9 @@ int DtlsSocket::step() {
 	while (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
 		ret = mbedtls_ssl_handshake_step(&ssl_context);
 		if (ret == 0) {
-			if (ssl_context.state == MBEDTLS_SSL_SERVER_HELLO &&
-				session_wait) {
+			if (session_wait &&
+				(ssl_context.state == MBEDTLS_SSL_SERVER_HELLO ||
+				 ssl_context.state == MBEDTLS_SSL_HANDSHAKE_WRAPUP)) {
 				return 0;
 			}
 
@@ -259,6 +280,13 @@ int DtlsSocket::step() {
 					ssl_context.handshake->resume == 0 &&
 					ssl_context.session_negotiate->id_len != 0) {
 				get_session_cache(ssl_context.session_negotiate);
+				return 0;
+			}
+
+			if (ssl_context.state == MBEDTLS_SSL_HANDSHAKE_WRAPUP &&
+					ssl_context.handshake->resume == 0 &&
+					ssl_context.session_negotiate->id_len != 0) {
+				save_session_cache(ssl_context.session_negotiate);
 				return 0;
 			}
 
@@ -326,6 +354,8 @@ DtlsSocket::~DtlsSocket() {
 	handshake_cb = nullptr;
 	delete resume_sess_cb;
 	resume_sess_cb = nullptr;
+	delete new_sess_cb;
+	new_sess_cb = nullptr;
 	ssl_config = nullptr;
 	free(ip);
 	ip = nullptr;

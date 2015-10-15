@@ -19,19 +19,31 @@ const dtlsserver = dtls.createServer(opts, socket => {
 			dtlsserver.close();
 		}
 	});
+	socket.once('error', (err) => {
+		console.error(`socket error on ${socket.address}:${socket.port}: ${err}`);
+	});
 	socket.once('close', () => {
-		console.log('closing socket from', socket.address, socket.port);
+		console.log(`closing socket from ${socket.address}:${socket.port}`);
 	});
 });
+dtlsserver.on('clientError', err => {
+	console.error(`clientError: ${err}`);
+});
 dtlsserver.on('error', err => {
-	console.error(err);
+	console.error(`server error: ${err}`);
 });
 dtlsserver.on('listening', () => {
 	const addr = dtlsserver.address();
 	console.log(`dtls listening on ${addr.address}:${addr.port}`);
 });
-dtlsserver.on('resumeSession', (session, callback) => {
-	console.log('*** resume session callback ***');
+dtlsserver.on('newSession', (sessionId, sessionData, callback) => {
+	console.log('*** new session callback ***', sessionId);
+	process.nextTick(() => {
+		callback();
+	});
+});
+dtlsserver.on('resumeSession', (sessionId, callback) => {
+	console.log('*** resume session callback ***', sessionId);
 	process.nextTick(() => {
 		callback(null, null);
 	});

@@ -18,13 +18,15 @@ public:
 	static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void ResumeSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static void NewSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	DtlsSocket(DtlsServer *server,
 						 unsigned char *client_ip,
 						 size_t client_ip_len,
 						 Nan::Callback* send_callback,
 						 Nan::Callback* hs_callback,
 						 Nan::Callback* error_callback,
-						 Nan::Callback* resume_sess_callback);
+						 Nan::Callback* resume_sess_callback,
+						 Nan::Callback* new_sess_callback);
 	int send_encrypted(const unsigned char *buf, size_t len);
 	int recv(unsigned char *buf, size_t len);
 	int send(const unsigned char *buf, size_t len);
@@ -35,6 +37,7 @@ public:
 	void error(int ret);
 	void reset();
 	void get_session_cache(mbedtls_ssl_session *session);
+	void save_session_cache(mbedtls_ssl_session *session);
 	void resume_session();
 	void resume_session(mbedtls_ssl_session *entry);
 
@@ -45,6 +48,7 @@ private:
 	Nan::Callback* error_cb;
 	Nan::Callback* handshake_cb;
 	Nan::Callback* resume_sess_cb;
+	Nan::Callback* new_sess_cb;
 	mbedtls_ssl_context ssl_context;
 	mbedtls_timing_delay_context timer;
 	mbedtls_ssl_config* ssl_config;
