@@ -113,7 +113,8 @@
       "sources": [
         "src/init.cc",
         "src/DtlsServer.cc",
-        "src/DtlsSocket.cc"
+        "src/DtlsSocket.cc",
+        "src/SessionWrap.cc"
       ],
       "include_dirs": [
         "<!(node -e \"require('nan')\")",

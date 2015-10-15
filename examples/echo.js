@@ -30,4 +30,10 @@ dtlsserver.on('listening', () => {
 	const addr = dtlsserver.address();
 	console.log(`dtls listening on ${addr.address}:${addr.port}`);
 });
+dtlsserver.on('resumeSession', (session, callback) => {
+	console.log('*** resume session callback ***');
+	process.nextTick(() => {
+		callback(null, null);
+	});
+});
 dtlsserver.listen(5683);

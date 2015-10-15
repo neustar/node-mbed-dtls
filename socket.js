@@ -9,6 +9,7 @@ const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
 class DtlsSocket extends EventEmitter {
 	constructor(server, address, port) {
 		super();
+		this.server = server;
 		this.dgramSocket = server.dgramSocket;
 		this.address = address;
 		this.port = port;
@@ -21,7 +22,8 @@ class DtlsSocket extends EventEmitter {
 		this.mbedSocket = new mbed.DtlsSocket(server.mbedServer, key,
 			this._sendEncrypted.bind(this),
 			this._handshakeComplete.bind(this),
-			this._error.bind(this));
+			this._error.bind(this),
+			this._resumeSession.bind(this));
 	}
 
 	send(msg) {
@@ -58,6 +60,18 @@ class DtlsSocket extends EventEmitter {
 		this.removeAllListeners();
 	}
 
+	_resumeSession(session) {
+		this.server.emit('resumeSession', session, this._resumeSessionCallback.bind(this));
+	}
+
+	_resumeSessionCallback(err, data) {
+		if (err) {
+
+			return;
+		}
+		this.mbedSocket.resumeSession(data || undefined);
+	}
+
 	receive(msg) {
 		if (!this.mbedSocket) {
 			return;
@@ -73,6 +87,7 @@ class DtlsSocket extends EventEmitter {
 		this.mbedSocket.close();
 		this.mbedSocket = null;
 		this.dgramSocket = null;
+		this.server = null;
 		this.emit('close');
 		this.removeAllListeners();
 	}
