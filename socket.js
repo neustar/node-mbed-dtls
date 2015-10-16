@@ -62,7 +62,10 @@ class DtlsSocket extends EventEmitter {
 	}
 
 	_resumeSession(sessionId) {
-		this.server.emit('resumeSession', sessionId.toString('hex'), this._resumeSessionCallback.bind(this));
+		const done = this._resumeSessionCallback.bind(this);
+		if (!this.server.emit('resumeSession', sessionId.toString('hex'), done)) {
+			process.nextTick(done);
+		}
 	}
 
 	_resumeSessionCallback(err, data) {
@@ -74,7 +77,13 @@ class DtlsSocket extends EventEmitter {
 	}
 
 	_newSession(session) {
-		this.server.emit('newSession', session.id.toString('hex'), session, this._newSessionCallback.bind(this));
+		session.address = this.address;
+		session.port = this.port;
+
+		const done = this._newSessionCallback.bind(this);
+		if (!this.server.emit('newSession', session.id.toString('hex'), session, done)) {
+			process.nextTick(done);
+		}
 	}
 
 	_newSessionCallback(err) {
