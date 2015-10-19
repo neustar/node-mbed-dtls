@@ -131,7 +131,8 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	// needed for server to send CertificateRequest
 	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
-	// TODO turn off server sending Certificate
+	// turn off server sending Certificate
+	mbedtls_ssl_conf_certificate_send(&conf, MBEDTLS_SSL_SEND_CERTIFICATE_DISABLED);
 
 	return;
 exit:
