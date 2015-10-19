@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "mbedtls/ssl_internal.h"
+#include "mbedtls/pk.h"
 
 using namespace node;
 
@@ -17,7 +18,8 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	// Constructor
 	v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(DtlsSocket::New);
 	constructor.Reset(ctor);
-	ctor->InstanceTemplate()->SetInternalFieldCount(1);
+	v8::Local<v8::ObjectTemplate>	ctorInst = ctor->InstanceTemplate();
+	ctorInst->SetInternalFieldCount(1);
 	ctor->SetClassName(Nan::New("DtlsSocket").ToLocalChecked());
 	
 	Nan::SetPrototypeMethod(ctor, "receiveData", ReceiveDataFromNode);
@@ -25,6 +27,8 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::SetPrototypeMethod(ctor, "send", Send);
 	Nan::SetPrototypeMethod(ctor, "resumeSession", ResumeSession);
 	Nan::SetPrototypeMethod(ctor, "newSession", NewSession);
+
+	Nan::SetAccessor(ctorInst, Nan::New("publicKey").ToLocalChecked(), GetPublicKey);
 
 	Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
 }
@@ -69,6 +73,27 @@ void DtlsSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>&
 	if (len > 0) {
 		info.GetReturnValue().Set(Nan::CopyBuffer((char*)buf, len).ToLocalChecked());
 	}
+}
+
+NAN_GETTER(DtlsSocket::GetPublicKey) {
+	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
+
+	mbedtls_ssl_session *session = socket->ssl_context.session;
+	if (session == NULL) {
+		return;
+	}
+	int ret;
+	const size_t buf_len = 256;
+	unsigned char buf[buf_len];
+	mbedtls_pk_context pk = session->peer_cert->pk;
+	ret = mbedtls_pk_write_pubkey_der(&pk, buf, buf_len);
+	if (ret < 0) {
+		// TODO error?
+		return;
+	}
+
+	// key is written at the end
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)buf + (buf_len - ret), ret).ToLocalChecked());
 }
 
 void DtlsSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {

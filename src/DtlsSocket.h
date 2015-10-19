@@ -19,6 +19,7 @@ public:
 	static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void ResumeSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void NewSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static NAN_GETTER(GetPublicKey);
 	DtlsSocket(DtlsServer *server,
 						 unsigned char *client_ip,
 						 size_t client_ip_len,

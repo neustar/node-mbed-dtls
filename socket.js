@@ -27,6 +27,10 @@ class DtlsSocket extends EventEmitter {
 			this._newSession.bind(this));
 	}
 
+	get publicKey() {
+		return this.mbedSocket.publicKey;
+	}
+
 	send(msg) {
 		if (!this.mbedSocket) {
 			return;
