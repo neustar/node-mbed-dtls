@@ -15,10 +15,6 @@ class DtlsSocket extends EventEmitter {
 		this.port = port;
 		const key = `${address}:${port}`;
 
-		this.dgramSocket.once('close', () => {
-			this.dgramSocket = null;
-		});
-
 		this.mbedSocket = new mbed.DtlsSocket(server.mbedServer, key,
 			this._sendEncrypted.bind(this),
 			this._handshakeComplete.bind(this),

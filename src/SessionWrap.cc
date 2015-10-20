@@ -27,9 +27,7 @@ SessionWrap::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 void SessionWrap::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {	
-	v8::Local<v8::Object> session_data = Nan::To<v8::Object>(info[0]).ToLocalChecked();
-
-	SessionWrap *session = new SessionWrap(session_data);
+	SessionWrap *session = new SessionWrap();
 	session->Wrap(info.This());
 	info.GetReturnValue().Set(info.This());
 }
@@ -38,16 +36,26 @@ v8::Local<v8::Object> SessionWrap::CreateFromSession(mbedtls_ssl_session *sessio
 	Nan::EscapableHandleScope scope;
 	v8::Local<v8::Function> cons = Nan::GetFunction(Nan::New(constructor)).ToLocalChecked();
 
-	v8::Local<v8::Object> session_data = Nan::New<v8::Object>();
-	Nan::Set(session_data, Nan::New("ciphersuite").ToLocalChecked(), Nan::New(session->ciphersuite));
-	Nan::Set(session_data, Nan::New("compression").ToLocalChecked(), Nan::New(session->compression));
-	Nan::Set(session_data, Nan::New("id").ToLocalChecked(), Nan::CopyBuffer((const char *)session->id, session->id_len).ToLocalChecked());
-	Nan::Set(session_data, Nan::New("master").ToLocalChecked(), Nan::CopyBuffer((const char *)session->master, 48).ToLocalChecked());
-	Nan::Set(session_data, Nan::New("verifyResult").ToLocalChecked(), Nan::New(session->verify_result));
-
-	const unsigned argc = 1;
-	v8::Local<v8::Value> argv[argc] = { session_data };
+	const unsigned argc = 0;
+	v8::Local<v8::Value> argv[argc] = {};
 	v8::Local<v8::Object> instance = Nan::NewInstance(cons, argc, argv).ToLocalChecked();
+
+	SessionWrap *news = Nan::ObjectWrap::Unwrap<SessionWrap>(instance);
+	news->ciphersuite = session->ciphersuite;
+	news->compression = session->compression;
+	news->verify_result = session->verify_result;
+
+	if((news->id = (char *)calloc(1, session->id_len)) == NULL) {
+		Nan::ThrowError("id malloc");
+	}
+	memcpy(news->id, session->id, session->id_len);
+	news->id_len = session->id_len;
+
+	if((news->master = (char *)calloc(1, 48)) == NULL) {
+		Nan::ThrowError("master alloc");
+	}
+	memcpy(news->master, session->master, 48);
+
 	return scope.Escape(instance);
 }
 
@@ -84,17 +92,7 @@ NAN_GETTER(SessionWrap::GetVerifyResult) {
 	info.GetReturnValue().Set(Nan::New(session->verify_result));
 }
 
-SessionWrap::SessionWrap(v8::Local<v8::Object> data) {
-	ciphersuite = Nan::Get(data, Nan::New("ciphersuite").ToLocalChecked()).ToLocalChecked()->Uint32Value();
-	compression = Nan::Get(data, Nan::New("compression").ToLocalChecked()).ToLocalChecked()->Uint32Value();
-	verify_result = Nan::Get(data, Nan::New("verifyResult").ToLocalChecked()).ToLocalChecked()->Uint32Value();
-
-	v8::Local<v8::Value> id_arg = Nan::Get(data, Nan::New("id").ToLocalChecked()).ToLocalChecked();
-	id = (char *)Buffer::Data(id_arg);
-	id_len = Buffer::Length(id_arg);
-
-	v8::Local<v8::Value> master_arg = Nan::Get(data, Nan::New("master").ToLocalChecked()).ToLocalChecked();
-	master = (char *)Buffer::Data(master_arg);
+SessionWrap::SessionWrap() {
 }
 
 SessionWrap::~SessionWrap() {

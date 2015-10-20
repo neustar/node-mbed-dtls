@@ -382,8 +382,10 @@ DtlsSocket::~DtlsSocket() {
 	delete new_sess_cb;
 	new_sess_cb = nullptr;
 	ssl_config = nullptr;
-	free(ip);
-	ip = nullptr;
+	if (ip != nullptr) {
+		free(ip);
+		ip = nullptr;
+	}
 	recv_buf = nullptr;
 	mbedtls_ssl_free(&ssl_context);
 }

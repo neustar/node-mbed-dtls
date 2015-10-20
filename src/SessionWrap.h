@@ -15,7 +15,7 @@ public:
 	static NAN_GETTER(GetId);
 	static NAN_GETTER(GetMaster);
 	static NAN_GETTER(GetVerifyResult);
-	SessionWrap(v8::Local<v8::Object> data);
+	SessionWrap();
 	void ConvertToMbedSession(mbedtls_ssl_session *session);
 	
 private:
