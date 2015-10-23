@@ -11,8 +11,8 @@ class DtlsSocket extends EventEmitter {
 		super();
 		this.server = server;
 		this.dgramSocket = server.dgramSocket;
-		this.address = address;
-		this.port = port;
+		this.remoteAddress = address;
+		this.remotePort = port;
 		const key = `${address}:${port}`;
 
 		this.mbedSocket = new mbed.DtlsSocket(server.mbedServer, key,
@@ -43,7 +43,7 @@ class DtlsSocket extends EventEmitter {
 		if (!this.dgramSocket || !this.dgramSocket._handle) {
 			return;
 		}
-		this.dgramSocket.send(msg, 0, msg.length, this.port, this.address);
+		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress);
 	}
 
 	_handshakeComplete() {
@@ -77,8 +77,8 @@ class DtlsSocket extends EventEmitter {
 	}
 
 	_newSession(session) {
-		session.address = this.address;
-		session.port = this.port;
+		session.remoteAddress = this.remoteAddress;
+		session.remotePort = this.remotePort;
 
 		const done = this._newSessionCallback.bind(this);
 		if (!this.server.emit('newSession', session.id.toString('hex'), session, done)) {
