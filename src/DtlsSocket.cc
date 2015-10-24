@@ -29,6 +29,7 @@ DtlsSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::SetPrototypeMethod(ctor, "newSession", NewSession);
 
 	Nan::SetAccessor(ctorInst, Nan::New("publicKey").ToLocalChecked(), GetPublicKey);
+	Nan::SetAccessor(ctorInst, Nan::New("publicKeyPEM").ToLocalChecked(), GetPublicKeyPEM);
 
 	Nan::Set(target, Nan::New("DtlsSocket").ToLocalChecked(), ctor->GetFunction());
 }
@@ -87,6 +88,27 @@ NAN_GETTER(DtlsSocket::GetPublicKey) {
 	unsigned char buf[buf_len];
 	mbedtls_pk_context pk = session->peer_cert->pk;
 	ret = mbedtls_pk_write_pubkey_der(&pk, buf, buf_len);
+	if (ret < 0) {
+		// TODO error?
+		return;
+	}
+
+	// key is written at the end
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)buf + (buf_len - ret), ret).ToLocalChecked());
+}
+
+NAN_GETTER(DtlsSocket::GetPublicKeyPEM) {
+	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
+
+	mbedtls_ssl_session *session = socket->ssl_context.session;
+	if (session == NULL) {
+		return;
+	}
+	int ret;
+	const size_t buf_len = 256;
+	unsigned char buf[buf_len];
+	mbedtls_pk_context pk = session->peer_cert->pk;
+	ret = mbedtls_pk_write_pubkey_pem(&pk, buf, buf_len);
 	if (ret < 0) {
 		// TODO error?
 		return;

@@ -60,6 +60,7 @@
 #define MBEDTLS_X509_CRT_PARSE_C
 
 #define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_PEM_WRITE_C
 #define MBEDTLS_BASE64_C
 // #define MBEDTLS_NET_C
 
