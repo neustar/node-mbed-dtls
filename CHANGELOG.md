@@ -1,3 +1,7 @@
+# 1.2.0
+
+* change `DtlsSocket` into a `stream.Duplex`
+
 # 1.1.1
 
 * add `publicKeyPEM` on the socket to retrieve the public key in PEM format.
