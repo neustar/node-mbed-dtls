@@ -1,14 +1,14 @@
 'use strict';
 
-var EventEmitter = require('events').EventEmitter;
+const stream = require('stream');
 
-var mbed = require('./build/Release/node_mbed_dtls');
+const mbed = require('./build/Release/node_mbed_dtls');
 
 const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
 
-class DtlsSocket extends EventEmitter {
+class DtlsSocket extends stream.Duplex {
 	constructor(server, address, port) {
-		super();
+		super({ allowHalfOpen: false });
 		this.server = server;
 		this.dgramSocket = server.dgramSocket;
 		this.remoteAddress = address;
@@ -30,15 +30,18 @@ class DtlsSocket extends EventEmitter {
 		return this.mbedSocket.publicKeyPEM;
 	}
 
-	send(msg) {
+	_read() {
+		// TODO implement way to stop/start reading?
+		// do nothing since chunk pushing is async
+	}
+
+	_write(chunk, encoding, callback) {
 		if (!this.mbedSocket) {
-			return;
+			return callback(new Error('no mbed socket'));
 		}
 
-		if (!Buffer.isBuffer(msg)) {
-			msg = new Buffer(msg);
-		}
-		this.mbedSocket.send(msg);
+		this.mbedSocket.send(chunk);
+		callback();
 	}
 
 	_sendEncrypted(msg) {
@@ -104,11 +107,12 @@ class DtlsSocket extends EventEmitter {
 
 		const data = this.mbedSocket.receiveData(msg);
 		if (data) {
-			this.emit('message', data);
+			this.push(data);
 		}
 	}
 
 	close() {
+		this.push(null);
 		this.mbedSocket.close();
 		this.mbedSocket = null;
 		this.dgramSocket = null;

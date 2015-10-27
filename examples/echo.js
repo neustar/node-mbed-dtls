@@ -10,20 +10,20 @@ const opts = {
 };
 
 const dtlsserver = dtls.createServer(opts, socket => {
-	console.log('secure connection from', socket.address, socket.port);
-	socket.on('message', msg => {
+	console.log(`secure connection from ${socket.remoteAddress}:${socket.remotePort}`);
+	socket.on('data', msg => {
 		//console.log('received:', msg.toString('utf8'));
-		socket.send(msg);
+		socket.write(msg);
 		if (msg.toString('utf8').indexOf('close') === 0) {
 			console.log('closing');
 			dtlsserver.close();
 		}
 	});
 	socket.once('error', (err) => {
-		console.error(`socket error on ${socket.address}:${socket.port}: ${err}`);
+		console.error(`socket error on ${socket.remoteAddress}:${socket.remotePort}: ${err}`);
 	});
 	socket.once('close', () => {
-		console.log(`closing socket from ${socket.address}:${socket.port}`);
+		console.log(`closing socket from ${socket.remoteAddress}:${socket.remotePort}`);
 	});
 });
 dtlsserver.on('clientError', err => {
