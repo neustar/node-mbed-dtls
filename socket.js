@@ -13,6 +13,7 @@ class DtlsSocket extends stream.Duplex {
 		this.dgramSocket = server.dgramSocket;
 		this.remoteAddress = address;
 		this.remotePort = port;
+		this._hadError = false;
 		const key = `${address}:${port}`;
 
 		this.mbedSocket = new mbed.DtlsSocket(server.mbedServer, key,
@@ -47,9 +48,18 @@ class DtlsSocket extends stream.Duplex {
 	_sendEncrypted(msg) {
 		// make absolutely sure the socket will let us send
 		if (!this.dgramSocket || !this.dgramSocket._handle) {
+			if (this._clientEnd) {
+				process.nextTick(() => {
+					this._finishEnd();
+				});
+			}
 			return;
 		}
-		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress);
+		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, () => {
+			if (this._clientEnd) {
+				this._finishEnd();
+			}
+		});
 	}
 
 	_handshakeComplete() {
@@ -59,12 +69,13 @@ class DtlsSocket extends stream.Duplex {
 
 	_error(code, msg) {
 		if (code === MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-			this.close();
+			this._end();
 			return;
 		}
 
+		this._hadError = true;
 		this.emit('error', code, msg);
-		this.close();
+		this._end();
 	}
 
 	_resumeSession(sessionId) {
@@ -76,7 +87,7 @@ class DtlsSocket extends stream.Duplex {
 
 	_resumeSessionCallback(err, data) {
 		if (err) {
-			this.close();
+			this._end();
 			return;
 		}
 		this.mbedSocket.resumeSession(data || undefined);
@@ -94,7 +105,7 @@ class DtlsSocket extends stream.Duplex {
 
 	_newSessionCallback(err) {
 		if (err) {
-			this.close();
+			this._end();
 			return;
 		}
 		this.mbedSocket.newSession();
@@ -111,13 +122,25 @@ class DtlsSocket extends stream.Duplex {
 		}
 	}
 
-	close() {
+	end() {
+		this._clientEnd = true;
+		this._end();
+	}
+
+	_end() {
+		super.end();
 		this.push(null);
 		this.mbedSocket.close();
 		this.mbedSocket = null;
+		if (!this._clientEnd) {
+			this._finishEnd();
+		}
+	}
+
+	_finishEnd() {
 		this.dgramSocket = null;
 		this.server = null;
-		this.emit('close');
+		this.emit('close', this._hadError);
 		this.removeAllListeners();
 	}
 }

@@ -22,7 +22,7 @@ class DtlsServer extends EventEmitter {
 		});
 		this.dgramSocket.once('error', err => {
 			this.emit('error', err);
-			this.close();
+			this._closeSocket();
 		});
 		this.dgramSocket.once('close', () => {
 			this._close();
@@ -42,7 +42,8 @@ class DtlsServer extends EventEmitter {
 		if (callback) {
 			this.once('close', callback);
 		}
-		this.dgramSocket.close();
+		this._closing = true;
+		this._endSockets();
 	}
 
 	address() {
@@ -78,6 +79,9 @@ class DtlsServer extends EventEmitter {
 		client.once('close', () => {
 			delete this.sockets[key];
 			client = null;
+			if (this._closing && Object.keys(this.sockets).length === 0) {
+				this._closeSocket();
+			}
 		});
 
 		client.once('secureConnect', () => {
@@ -86,18 +90,26 @@ class DtlsServer extends EventEmitter {
 		return client;
 	}
 
-	_close() {
+	_endSockets() {
 		this.dgramSocket.removeListener('message', this._onMessage);
 		Object.keys(this.sockets).forEach(skey => {
 			const s = this.sockets[skey];
 			if (s) {
-				s.close();
+				s.end();
 			}
 		});
+	}
+
+	_close() {
+		this._endSockets();
 		this.sockets = {};
 
 		this.emit('close');
 		this.removeAllListeners();
+	}
+
+	_closeSocket() {
+		this.dgramSocket.close();
 	}
 }
 
