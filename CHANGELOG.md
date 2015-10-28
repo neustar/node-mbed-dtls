@@ -1,3 +1,7 @@
+# 1.2.1
+
+* Allow sockets a chance to send closing alerts on server close
+
 # 1.2.0
 
 * change `DtlsSocket` into a `stream.Duplex`
