@@ -55,7 +55,7 @@ private:
 	mbedtls_timing_delay_context timer;
 	mbedtls_ssl_config* ssl_config;
 	const unsigned char *recv_buf;
-	size_t recv_len;	
+	size_t recv_len;
 	unsigned char *ip;
 	size_t ip_len;
 
