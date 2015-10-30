@@ -133,6 +133,10 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	// needed for server to send CertificateRequest
 	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
+	static int ssl_cert_types[] = { MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY, MBEDTLS_TLS_CERT_TYPE_NONE };
+	mbedtls_ssl_conf_client_certificate_types(&conf, ssl_cert_types);
+	mbedtls_ssl_conf_server_certificate_types(&conf, ssl_cert_types);
+
 	// turn off server sending Certificate
 	mbedtls_ssl_conf_certificate_send(&conf, MBEDTLS_SSL_SEND_CERTIFICATE_DISABLED);
 
