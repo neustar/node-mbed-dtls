@@ -41,13 +41,17 @@ class DtlsSocket extends stream.Duplex {
 			return callback(new Error('no mbed socket'));
 		}
 
+		this._sendCallback = callback;
 		this.mbedSocket.send(chunk);
-		callback();
 	}
 
 	_sendEncrypted(msg) {
 		// make absolutely sure the socket will let us send
 		if (!this.dgramSocket || !this.dgramSocket._handle) {
+			if (this._sendCallback) {
+				this._sendCallback(new Error('no underlying socket'));
+				this._sendCallback = null;
+			}
 			if (this._clientEnd) {
 				process.nextTick(() => {
 					this._finishEnd();
@@ -55,7 +59,11 @@ class DtlsSocket extends stream.Duplex {
 			}
 			return;
 		}
-		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, () => {
+		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, err => {
+			if (this._sendCallback) {
+				this._sendCallback(err);
+				this._sendCallback = null;
+			}
 			if (this._clientEnd) {
 				this._finishEnd();
 			}
