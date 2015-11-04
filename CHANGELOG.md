@@ -1,3 +1,7 @@
+# 1.3.0
+
+* Update mbedtls that queues out-of-sequence handshake messages and has better raw public key support.
+
 # 1.2.1
 
 * Allow sockets a chance to send closing alerts on server close
