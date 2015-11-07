@@ -1,3 +1,7 @@
+# 1.3.2
+
+* Fix `publicKeyPEM` property
+
 # 1.3.1
 
 * Update mbedtls to fix queueing corner cases
