@@ -15,6 +15,10 @@
   "dependencies": {
     "nan": "^2.0.9"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spark/node-mbed-dtls.git"
+  },
   "devDependencies": {
     "mocha": "^2.3.3",
     "node-gyp": "^3.0.3",
