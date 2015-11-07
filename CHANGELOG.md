@@ -1,3 +1,7 @@
+# 1.3.1
+
+* Update mbedtls to fix queueing corner cases
+
 # 1.3.0
 
 * Update mbedtls that queues out-of-sequence handshake messages and has better raw public key support.
