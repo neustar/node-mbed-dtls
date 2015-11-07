@@ -256,7 +256,7 @@ int DtlsSocket::receive_data(unsigned char *buf, int len) {
 		// normal reading of unencrypted data	
 		memset(buf, 0, len);
 		ret = mbedtls_ssl_read(&ssl_context, buf, len);
-		if (ret <= 0) {
+		if (ret <= 0 && ret != MBEDTLS_ERR_SSL_WANT_READ) {
 			error(ret);
 			return 0;
 		}
@@ -346,6 +346,9 @@ int DtlsSocket::step() {
 				ssl_context.state == MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC ||
 				ssl_context.state == MBEDTLS_SSL_CLIENT_FINISHED
 				) {
+				if (recv_len > 0)
+					continue;
+				
 				return 0;
 			}
 			// keep looping to send everything
@@ -354,8 +357,13 @@ int DtlsSocket::step() {
 			// client will start a new session, so reset things
 			reset();
 			continue;
-		}
-		else if (ret != 0) {
+		} else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
+			// we just need more data, so return
+			if (recv_len > 0)
+				continue;
+
+			return 0;
+		} else if (ret != 0) {
 			// bad things
 			error(ret);			
 			return 0;

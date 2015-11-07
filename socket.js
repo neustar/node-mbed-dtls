@@ -136,6 +136,11 @@ class DtlsSocket extends stream.Duplex {
 	}
 
 	_end() {
+		if (this._ending) {
+			return;
+		}
+		this._ending = true;
+
 		super.end();
 		this.push(null);
 		this.mbedSocket.close();

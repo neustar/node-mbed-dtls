@@ -25,7 +25,7 @@ class DtlsServer extends EventEmitter {
 			this._closeSocket();
 		});
 		this.dgramSocket.once('close', () => {
-			this._close();
+			this._socketClosed();
 		});
 
 		const cert = Buffer.isBuffer(options.cert) ? options.cert : fs.readFileSync(options.cert);
@@ -91,16 +91,25 @@ class DtlsServer extends EventEmitter {
 	}
 
 	_endSockets() {
-		this.dgramSocket.removeListener('message', this._onMessage);
-		Object.keys(this.sockets).forEach(skey => {
+		if (this.dgramSocket) {
+			this.dgramSocket.removeListener('message', this._onMessage);
+		}
+		const sockets = Object.keys(this.sockets);
+		sockets.forEach(skey => {
 			const s = this.sockets[skey];
 			if (s) {
 				s.end();
 			}
 		});
+
+		if (sockets.length === 0) {
+			this._closeSocket();
+		}
 	}
 
-	_close() {
+	_socketClosed() {
+		this.dgramSocket.removeListener('message', this._onMessage);
+		this.dgramSocket = null;
 		this._endSockets();
 		this.sockets = {};
 
@@ -109,7 +118,9 @@ class DtlsServer extends EventEmitter {
 	}
 
 	_closeSocket() {
-		this.dgramSocket.close();
+		if (this.dgramSocket) {
+			this.dgramSocket.close();
+		}
 	}
 }
 
