@@ -114,8 +114,7 @@ NAN_GETTER(DtlsSocket::GetPublicKeyPEM) {
 		return;
 	}
 
-	// key is written at the end
-	info.GetReturnValue().Set(Nan::CopyBuffer((char *)buf + (buf_len - ret), ret).ToLocalChecked());
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)buf, strlen((const char *)buf)).ToLocalChecked());
 }
 
 void DtlsSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
