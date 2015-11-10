@@ -35,7 +35,7 @@ public:
 	int receive_data(unsigned char *buf, int len);
 	int step();
 	void store_data(const unsigned char *buf, size_t len);
-	void close();
+	int close();
 	void error(int ret);
 	void reset();
 	void get_session_cache(mbedtls_ssl_session *session);

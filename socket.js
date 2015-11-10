@@ -148,9 +148,9 @@ class DtlsSocket extends stream.Duplex {
 
 		super.end();
 		this.push(null);
-		this.mbedSocket.close();
+		const noSend = this.mbedSocket.close();
 		this.mbedSocket = null;
-		if (!this._clientEnd) {
+		if (noSend || !this._clientEnd) {
 			this._finishEnd();
 		}
 	}
