@@ -1,3 +1,7 @@
+# 1.3.3
+
+* Fix send callback handling to prevent deadlock
+
 # 1.3.2
 
 * Fix `publicKeyPEM` property
