@@ -1,3 +1,8 @@
+# 1.3.4
+
+* Return `int` from `DtlsSocket::close` that indicates when a close alert will not be sent.
+* Use direct form of callbacks from C++
+
 # 1.3.3
 
 * Fix send callback handling to prevent deadlock
