@@ -15,9 +15,11 @@ class DtlsServer extends EventEmitter {
 		this.sockets = {};
 		this.dgramSocket = dgram.createSocket('udp4');
 		this._onMessage = this._onMessage.bind(this);
+		this.listening = false;
 
 		this.dgramSocket.on('message', this._onMessage);
 		this.dgramSocket.once('listening', () => {
+			this.listening = true;
 			this.emit('listening');
 		});
 		this.dgramSocket.once('error', err => {
@@ -108,7 +110,10 @@ class DtlsServer extends EventEmitter {
 	}
 
 	_socketClosed() {
-		this.dgramSocket.removeListener('message', this._onMessage);
+		this.listening = false;
+		if (this.dgramSocket) {
+			this.dgramSocket.removeListener('message', this._onMessage);
+		}
 		this.dgramSocket = null;
 		this._endSockets();
 		this.sockets = {};
@@ -118,6 +123,13 @@ class DtlsServer extends EventEmitter {
 	}
 
 	_closeSocket() {
+		if (!this.listening) {
+			process.nextTick(() => {
+				this._socketClosed();
+			});
+			return;
+		}
+
 		if (this.dgramSocket) {
 			this.dgramSocket.close();
 		}
