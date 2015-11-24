@@ -1,3 +1,9 @@
+# 1.3.6
+
+* Update mbedtls that queues Finished messages in more states for a server
+* Handle socket binding errors
+* Remove special state checking code
+
 # 1.3.5
 
 * Update mbedtls that plays nice with GCC
