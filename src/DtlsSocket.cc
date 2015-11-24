@@ -347,20 +347,6 @@ int DtlsSocket::step() {
 				return 0;
 			}
 
-			// in these states we are waiting for more input
-			if (
-				ssl_context.state == MBEDTLS_SSL_SERVER_HELLO_VERIFY_REQUEST_SENT ||
-				ssl_context.state == MBEDTLS_SSL_CLIENT_CERTIFICATE ||
-				ssl_context.state == MBEDTLS_SSL_CLIENT_KEY_EXCHANGE ||
-				ssl_context.state == MBEDTLS_SSL_CERTIFICATE_VERIFY ||
-				ssl_context.state == MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC ||
-				ssl_context.state == MBEDTLS_SSL_CLIENT_FINISHED
-				) {
-				if (recv_len > 0)
-					continue;
-				
-				return 0;
-			}
 			// keep looping to send everything
 			continue;
 		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
