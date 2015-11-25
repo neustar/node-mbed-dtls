@@ -4,7 +4,6 @@ var path = require('path');
 var dtls = require('../index');
 
 const opts = {
-	cert: path.join(__dirname, '../test/public.der'),
 	key: path.join(__dirname, '../test/private.der'),
 	debug: 5
 };
