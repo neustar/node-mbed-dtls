@@ -1,3 +1,7 @@
+# 2.0.0
+
+* Remove public key as an argument because it can be derived from the private key
+
 # 1.3.6
 
 * Update mbedtls that queues Finished messages in more states for a server
