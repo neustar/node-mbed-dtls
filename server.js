@@ -30,10 +30,9 @@ class DtlsServer extends EventEmitter {
 			this._socketClosed();
 		});
 
-		const cert = Buffer.isBuffer(options.cert) ? options.cert : fs.readFileSync(options.cert);
 		const key = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
 
-		this.mbedServer = new mbed.DtlsServer(cert, key, options.debug);
+		this.mbedServer = new mbed.DtlsServer(key, options.debug);
 	}
 
 	listen(port, hostname, callback) {

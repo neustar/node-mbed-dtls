@@ -34,30 +34,25 @@ DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 
 void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	if (info.Length() < 2 ||
-			!Buffer::HasInstance(info[0]) ||
-			!Buffer::HasInstance(info[1])) {
-		return Nan::ThrowTypeError("Expecting cert and key to be buffers");
+			!Buffer::HasInstance(info[0])) {
+		return Nan::ThrowTypeError("Expecting key to be a buffer");
 	}
 
-	size_t cert_len = Buffer::Length(info[0]);
-	size_t key_len = Buffer::Length(info[1]);
+	size_t key_len = Buffer::Length(info[0]);
 
-	const unsigned char *cert = (const unsigned char *)Buffer::Data(info[0]);
-	const unsigned char *key = (const unsigned char *)Buffer::Data(info[1]);
+	const unsigned char *key = (const unsigned char *)Buffer::Data(info[0]);
 
 	int debug_level = 0;
 	if (info.Length() > 2) {
 		debug_level = info[2]->Uint32Value();
 	}
 
-	DtlsServer *server = new DtlsServer(cert, cert_len, key, key_len, debug_level);
+	DtlsServer *server = new DtlsServer(key, key_len, debug_level);
 	server->Wrap(info.This());
 	info.GetReturnValue().Set(info.This());
 }
 
-DtlsServer::DtlsServer(const unsigned char *srv_crt,
-											 size_t srv_crt_len,
-											 const unsigned char *srv_key,
+DtlsServer::DtlsServer(const unsigned char *srv_key,
 											 size_t srv_key_len,
 											 int debug_level)
 		: Nan::ObjectWrap() {
@@ -77,11 +72,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	mbedtls_debug_set_threshold(debug_level);
 #endif
 
-	ret = mbedtls_pk_parse_public_key(&pkey,
-																		(const unsigned char *)srv_crt,
-																		srv_crt_len);
-	if (ret != 0) goto exit;
-	
 	ret = mbedtls_pk_parse_key(&pkey,
 														 (const unsigned char *)srv_key,
 														 srv_key_len,
@@ -108,14 +98,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_crt,
 	// TODO use node random number generator?
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-
-#if defined(MBEDTLS_SSL_CACHE_C)
-	// TODO need to add hooks for session get/set
-	mbedtls_ssl_conf_session_cache(&conf,
-																 &cache,
-																 mbedtls_ssl_cache_get,
-																 mbedtls_ssl_cache_set);
-#endif
 
 	ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
 	if (ret != 0) goto exit;

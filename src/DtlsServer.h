@@ -22,9 +22,7 @@ public:
 	static Nan::Persistent<v8::FunctionTemplate> constructor;
 	static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
 	static void New(const Nan::FunctionCallbackInfo<v8::Value>& info);
-	DtlsServer(const unsigned char *srv_crt,
-						 size_t srv_crt_len,
-						 const unsigned char *srv_key,
+	DtlsServer(const unsigned char *srv_key,
 						 size_t srv_key_len,
 						 int debug_level = 0);
 	inline mbedtls_ssl_config* config() { return &conf; }
