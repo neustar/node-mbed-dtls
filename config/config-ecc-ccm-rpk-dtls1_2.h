@@ -63,11 +63,9 @@
 #define MBEDTLS_PEM_PARSE_C
 #define MBEDTLS_PEM_WRITE_C
 #define MBEDTLS_BASE64_C
-// #define MBEDTLS_NET_C
 
 #define MBEDTLS_DEBUG_C
 #define MBEDTLS_ERROR_C
-#define MBEDTLS_CERTS_C
 
 /* Save RAM at the expense of ROM */
 #define MBEDTLS_AES_ROM_TABLES
