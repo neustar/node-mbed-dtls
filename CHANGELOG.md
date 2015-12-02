@@ -1,3 +1,8 @@
+# 2.0.1
+
+* Fix `debug` argument
+* Remove test certs
+
 # 2.0.0
 
 * Remove public key as an argument because it can be derived from the private key
