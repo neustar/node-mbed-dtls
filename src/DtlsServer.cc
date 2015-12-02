@@ -33,7 +33,7 @@ DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-	if (info.Length() < 2 ||
+	if (info.Length() < 1 ||
 			!Buffer::HasInstance(info[0])) {
 		return Nan::ThrowTypeError("Expecting key to be a buffer");
 	}
@@ -43,8 +43,8 @@ void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	const unsigned char *key = (const unsigned char *)Buffer::Data(info[0]);
 
 	int debug_level = 0;
-	if (info.Length() > 2) {
-		debug_level = info[2]->Uint32Value();
+	if (info.Length() > 1) {
+		debug_level = info[1]->Uint32Value();
 	}
 
 	DtlsServer *server = new DtlsServer(key, key_len, debug_level);
