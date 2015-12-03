@@ -30,7 +30,12 @@ class DtlsServer extends EventEmitter {
 			this._socketClosed();
 		});
 
-		const key = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
+		let key = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
+		// likely a PEM encoded key, add null terminating byte
+		// 0x2d = '-'
+		if (key[0] === 0x2d && key[key.length - 1] !== 0) {
+			key = Buffer.concat([key, new Buffer([0])]);
+		}
 
 		this.mbedServer = new mbed.DtlsServer(key, options.debug);
 		if (options.handshakeTimeoutMin) {
