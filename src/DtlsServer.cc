@@ -2,6 +2,7 @@
 #include "DtlsServer.h"
 
 #include <stdio.h>
+#include <sys/time.h>
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
 
@@ -13,7 +14,11 @@ static void my_debug( void *ctx, int level,
 {
 	((void) level);
 
-	mbedtls_fprintf((FILE *) ctx, "%s:%04d: %s", file, line, str);
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+
+	mbedtls_fprintf((FILE *) ctx, "%013ld:%s:%04d: %s", ms, file, line, str);
 	fflush((FILE *) ctx);
 }
 
