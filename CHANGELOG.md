@@ -1,3 +1,7 @@
+# 2.0.3
+
+* Fix npm publish
+
 # 2.0.2
 
 * Increase max content to 768 bytes
