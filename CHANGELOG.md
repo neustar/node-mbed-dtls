@@ -1,3 +1,7 @@
+# 2.0.4
+
+* Add null terminating byte for PEM encoded keys
+
 # 2.0.3
 
 * Fix npm publish
