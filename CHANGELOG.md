@@ -1,3 +1,9 @@
+# 2.0.2
+
+* Increase max content to 768 bytes
+* Add time information to debug output
+* Add setter for `handshakeTimeoutMin`
+
 # 2.0.1
 
 * Fix `debug` argument
