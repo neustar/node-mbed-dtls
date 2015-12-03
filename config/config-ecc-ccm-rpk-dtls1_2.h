@@ -90,7 +90,7 @@
  * both ends of the connection!  (See comments in "mbedtls/ssl.h".)
  * The optimal size here depends on the typical size of records.
  */
-#define MBEDTLS_SSL_MAX_CONTENT_LEN             512
+#define MBEDTLS_SSL_MAX_CONTENT_LEN             768
 
 #include "mbedtls/check_config.h"
 
