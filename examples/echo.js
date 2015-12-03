@@ -5,7 +5,8 @@ var dtls = require('../index');
 
 const opts = {
 	key: path.join(__dirname, '../test/private.der'),
-	debug: 5
+	debug: 5,
+	handshakeTimeoutMin: 3000
 };
 
 const dtlsserver = dtls.createServer(opts, socket => {

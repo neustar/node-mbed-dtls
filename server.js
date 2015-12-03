@@ -33,6 +33,9 @@ class DtlsServer extends EventEmitter {
 		const key = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
 
 		this.mbedServer = new mbed.DtlsServer(key, options.debug);
+		if (options.handshakeTimeoutMin) {
+			this.mbedServer.handshakeTimeoutMin = options.handshakeTimeoutMin;
+		}
 	}
 
 	listen(port, hostname, callback) {

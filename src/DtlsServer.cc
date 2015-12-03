@@ -26,8 +26,11 @@ DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	// Constructor
 	v8::Local<v8::FunctionTemplate> ctor = Nan::New<v8::FunctionTemplate>(DtlsServer::New);
 	constructor.Reset(ctor);
-	ctor->InstanceTemplate()->SetInternalFieldCount(1);
+	v8::Local<v8::ObjectTemplate>	ctorInst = ctor->InstanceTemplate();
+	ctorInst->SetInternalFieldCount(1);
 	ctor->SetClassName(Nan::New("DtlsServer").ToLocalChecked());
+
+	Nan::SetAccessor(ctorInst, Nan::New("handshakeTimeoutMin").ToLocalChecked(), 0, SetHandshakeTimeoutMin);
 
 	Nan::Set(target, Nan::New("DtlsServer").ToLocalChecked(), ctor->GetFunction());
 }
@@ -126,6 +129,11 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 exit:
 	throwError(ret);
 	return;
+}
+
+NAN_SETTER(DtlsServer::SetHandshakeTimeoutMin) {
+	DtlsServer *server = Nan::ObjectWrap::Unwrap<DtlsServer>(info.This());
+	mbedtls_ssl_conf_handshake_timeout(server->config(), value->Uint32Value(), server->config()->hs_timeout_max);
 }
 
 void DtlsServer::throwError(int ret) {
