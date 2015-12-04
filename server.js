@@ -79,6 +79,11 @@ class DtlsServer extends EventEmitter {
 
 	_createSocket(rinfo, key) {
 		var client = new DtlsSocket(this, rinfo.address, rinfo.port);
+		this._attachToSocket(client, key);
+		return client;
+	}
+
+	_attachToSocket(client, key) {
 		client.once('error', (code, err) => {
 			delete this.sockets[key];
 			if (!client.connected) {
@@ -92,11 +97,16 @@ class DtlsServer extends EventEmitter {
 				this._closeSocket();
 			}
 		});
+		client.once('reconnect', socket => {
+			// treat like a brand new connection
+			socket.reset();
+			this._attachToSocket(socket, key);
+			this.sockets[key] = socket;
+		});
 
 		client.once('secureConnect', () => {
 			this.emit('secureConnection', client);
 		});
-		return client;
 	}
 
 	_endSockets() {

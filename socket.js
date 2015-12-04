@@ -5,6 +5,7 @@ const stream = require('stream');
 const mbed = require('./build/Release/node_mbed_dtls');
 
 const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
+const MBEDTLS_ERR_SSL_CLIENT_RECONNECT = -0x6780;
 
 class DtlsSocket extends stream.Duplex {
 	constructor(server, address, port) {
@@ -81,6 +82,14 @@ class DtlsSocket extends stream.Duplex {
 			return;
 		}
 
+		if (code === MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
+			this.emit('reconnect', this);
+			process.nextTick(() => {
+				this.receive();
+			});
+			return;
+		}
+
 		this._hadError = true;
 		if (this._sendCallback) {
 			this._sendCallback(code);
@@ -138,6 +147,11 @@ class DtlsSocket extends stream.Duplex {
 	end() {
 		this._clientEnd = true;
 		this._end();
+	}
+
+	reset() {
+		this.emit('close', false);
+		this.removeAllListeners();
 	}
 
 	_end() {

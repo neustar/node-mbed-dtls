@@ -64,8 +64,12 @@ void DtlsSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 void DtlsSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	DtlsSocket *socket = Nan::ObjectWrap::Unwrap<DtlsSocket>(info.This());
-	const unsigned char *recv_data = (const unsigned char *)Buffer::Data(info[0]);
-	socket->store_data(recv_data, Buffer::Length(info[0]));
+	
+	if (info.Length() >= 1 && Buffer::HasInstance(info[0])) {
+		const unsigned char *recv_data = (const unsigned char *)Buffer::Data(info[0]);
+		size_t recv_len = Buffer::Length(info[0]);
+		socket->store_data(recv_data, recv_len);
+	}
 
 	int len = 1024;
 	unsigned char buf[len];	
