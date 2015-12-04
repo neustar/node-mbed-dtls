@@ -1,3 +1,7 @@
+# 2.1.0
+
+* Handle client reconnecting on the same host/port quartet
+
 # 2.0.4
 
 * Add null terminating byte for PEM encoded keys
