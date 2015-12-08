@@ -107,6 +107,8 @@ class DtlsServer extends EventEmitter {
 		client.once('secureConnect', () => {
 			this.emit('secureConnection', client);
 		});
+
+		this.emit('connection', client);
 	}
 
 	_endSockets() {
