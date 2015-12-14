@@ -1,3 +1,7 @@
+# 2.2.1
+
+* Do not consider session resumed unless message is understood
+
 # 2.2.0
 
 * Add session resumption and renegotiation support
