@@ -78,7 +78,12 @@ class DtlsServer extends EventEmitter {
 				const called = this.emit('resumeSession', key, client, (err, session) => {
 					if (!err && session) {
 						if (client.resumeSession(session)) {
-							this.emit('secureConnection', client, session);
+							client.cork();
+							if (client.receive(msg)) {
+								this.emit('secureConnection', client, session);
+							}
+							client.uncork();
+							return;
 						}
 					}
 					client.receive(msg);
@@ -172,7 +177,5 @@ class DtlsServer extends EventEmitter {
 		}
 	}
 }
-
-// TODO newSession and resumeSession events
 
 module.exports = DtlsServer;
