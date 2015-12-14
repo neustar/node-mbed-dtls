@@ -9,28 +9,37 @@
 class SessionWrap : public Nan::ObjectWrap {
 public:
 	static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);	
-	static v8::Local<v8::Object> CreateFromSession(mbedtls_ssl_session *session);
+	static v8::Local<v8::Object> CreateFromContext(mbedtls_ssl_context *ssl, uint8_t *random);
+	static void Restore(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static NAN_GETTER(GetCiphersuite);
-	static NAN_GETTER(GetCompression);
+	static NAN_GETTER(GetRandomBytes);
 	static NAN_GETTER(GetId);
 	static NAN_GETTER(GetMaster);
-	static NAN_GETTER(GetVerifyResult);
+	static NAN_GETTER(GetInEpoch);
+	static NAN_GETTER(GetOutCounter);
+
+	static NAN_SETTER(SetCiphersuite);
+	static NAN_SETTER(SetRandomBytes);
+	static NAN_SETTER(SetId);
+	static NAN_SETTER(SetMaster);
+	static NAN_SETTER(SetInEpoch);
+	static NAN_SETTER(SetOutCounter);
 	SessionWrap();
-	void ConvertToMbedSession(mbedtls_ssl_session *session);
+
+	int ciphersuite;
+	unsigned char id[32];
+	size_t id_len;
+	unsigned char master[48];
+	uint8_t randbytes[64];
+	uint16_t in_epoch;
+	unsigned char out_ctr[8];
 	
 private:
 	~SessionWrap();
 
 	static void New(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static Nan::Persistent<v8::FunctionTemplate> constructor;
-	int ciphersuite;
-	int compression;
-	char *id;
-	size_t id_len;
-	char *master;
-	uint32_t verify_result;
-
-	//mbedtls_x509_crt *peer_cert;
+	
 };
 
 #endif

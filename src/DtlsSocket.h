@@ -8,6 +8,7 @@
 #include "mbedtls/timing.h"
 
 #include "DtlsServer.h"
+#include "SessionWrap.h"
 
 class DtlsSocket : public Nan::ObjectWrap {
 public:
@@ -18,17 +19,18 @@ public:
 	static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void ResumeSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
-	static void NewSession(const Nan::FunctionCallbackInfo<v8::Value>& info);
+	static void Renegotiate(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static NAN_GETTER(GetPublicKey);
 	static NAN_GETTER(GetPublicKeyPEM);
+	static NAN_GETTER(GetOutCounter);
+	static NAN_GETTER(GetSession);
 	DtlsSocket(DtlsServer *server,
 						 unsigned char *client_ip,
 						 size_t client_ip_len,
 						 Nan::Callback* send_callback,
 						 Nan::Callback* hs_callback,
 						 Nan::Callback* error_callback,
-						 Nan::Callback* resume_sess_callback,
-						 Nan::Callback* new_sess_callback);
+						 Nan::Callback* resume_sess_callback);
 	int send_encrypted(const unsigned char *buf, size_t len);
 	int recv(unsigned char *buf, size_t len);
 	int send(const unsigned char *buf, size_t len);
@@ -39,9 +41,9 @@ public:
 	void error(int ret);
 	void reset();
 	void get_session_cache(mbedtls_ssl_session *session);
-	void save_session_cache(mbedtls_ssl_session *session);
-	void resume_session();
-	void resume_session(mbedtls_ssl_session *entry);
+	void renegotiate(SessionWrap *sess);
+	bool resume(SessionWrap *sess);
+	void proceed();
 
 private:
 	void throwError(int ret);
@@ -50,7 +52,6 @@ private:
 	Nan::Callback* error_cb;
 	Nan::Callback* handshake_cb;
 	Nan::Callback* resume_sess_cb;
-	Nan::Callback* new_sess_cb;
 	mbedtls_ssl_context ssl_context;
 	mbedtls_timing_delay_context timer;
 	mbedtls_ssl_config* ssl_config;
@@ -60,6 +61,7 @@ private:
 	size_t ip_len;
 
 	bool session_wait;
+	uint8_t random[64];	
 };
 
 #endif

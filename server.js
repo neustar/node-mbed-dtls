@@ -72,6 +72,24 @@ class DtlsServer extends EventEmitter {
 		let client = this.sockets[key];
 		if (!client) {
 			this.sockets[key] = client = this._createSocket(rinfo, key);
+
+			// if ApplicationData (23)
+			if (msg.length > 0 && msg[0] === 23) {
+				const called = this.emit('resumeSession', key, client, (err, session) => {
+					if (!err && session) {
+						if (client.resumeSession(session)) {
+							this.emit('secureConnection', client, session);
+						}
+					}
+					client.receive(msg);
+				});
+
+				// if somebody was listening, session will attempt to be resumed
+				// do not process with receive until resume finishes
+				if (called) {
+					return;
+				}
+			}
 		}
 
 		client.receive(msg);

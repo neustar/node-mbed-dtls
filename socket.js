@@ -21,15 +21,36 @@ class DtlsSocket extends stream.Duplex {
 			this._sendEncrypted.bind(this),
 			this._handshakeComplete.bind(this),
 			this._error.bind(this),
-			this._resumeSession.bind(this),
-			this._newSession.bind(this));
+			this._renegotiate.bind(this));
 	}
 
 	get publicKey() {
-		return this.mbedSocket.publicKey;
+		return this.mbedSocket.publicKey || new Buffer(0);
 	}
 	get publicKeyPEM() {
-		return this.mbedSocket.publicKeyPEM;
+		return this.mbedSocket.publicKeyPEM || new Buffer(0);
+	}
+	get outCounter() {
+		return this.mbedSocket.outCounter;
+	}
+	get session() {
+		return this.mbedSocket.session;
+	}
+
+	resumeSession(session) {
+		if (!session) {
+			return;
+		}
+
+		const s = new mbed.SessionWrap();
+		s.restore(session);
+
+		const success = this.mbedSocket.resumeSession(s);
+		if (success) {
+			this.connected = true;
+			this.resumed = true;
+		}
+		return success;
 	}
 
 	_read() {
@@ -68,6 +89,7 @@ class DtlsSocket extends stream.Duplex {
 			return;
 		}
 
+		this.emit('send', msg.length);
 		this.dgramSocket.send(msg, 0, msg.length, this.remotePort, this.remoteAddress, sendFinished);
 	}
 
@@ -100,29 +122,26 @@ class DtlsSocket extends stream.Duplex {
 		this._end();
 	}
 
-	_resumeSession(sessionId) {
-		const done = this._resumeSessionCallback.bind(this);
-		if (!this.server.emit('resumeSession', sessionId.toString('hex'), done)) {
+	_renegotiate(sessionId) {
+		const done = this._renegotiateCallback.bind(this);
+		if (!this.server.emit('renegotiate', sessionId.toString('hex'), this, done)) {
 			process.nextTick(done);
 		}
 	}
 
-	_resumeSessionCallback(err, data) {
+	_renegotiateCallback(err, data) {
 		if (err) {
 			this._end();
 			return;
 		}
-		this.mbedSocket.resumeSession(data || undefined);
-	}
 
-	_newSession(session) {
-		session.remoteAddress = this.remoteAddress;
-		session.remotePort = this.remotePort;
-
-		const done = this._newSessionCallback.bind(this);
-		if (!this.server.emit('newSession', session.id.toString('hex'), session, done)) {
-			process.nextTick(done);
+		let s;
+		if (data) {
+			s = new mbed.SessionWrap();
+			s.restore(data);
 		}
+		this.mbedSocket.renegotiate(s || undefined);
+		this.resumed = true;
 	}
 
 	_newSessionCallback(err) {
@@ -138,6 +157,7 @@ class DtlsSocket extends stream.Duplex {
 			return;
 		}
 
+		this.emit('receive', msg.length);
 		const data = this.mbedSocket.receiveData(msg);
 		if (data) {
 			this.push(data);
@@ -163,6 +183,7 @@ class DtlsSocket extends stream.Duplex {
 		super.end();
 		this.push(null);
 		const noSend = this.mbedSocket.close();
+		this.emit('closing');
 		this.mbedSocket = null;
 		if (noSend || !this._clientEnd) {
 			this._finishEnd();
