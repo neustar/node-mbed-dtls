@@ -1,3 +1,11 @@
+# 2.2.0
+
+* Add session resumption and renegotiation support
+
+# 2.1.1
+
+* Emit `connection` event when receiving first message from a source ip/port quartet.
+
 # 2.1.0
 
 * Handle client reconnecting on the same host/port quartet
