@@ -1,3 +1,7 @@
+# 2.2.2
+
+* Fix invalid access to `msg.length` on `socket.receive`
+
 # 2.2.1
 
 * Do not consider session resumed unless message is understood
