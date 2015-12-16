@@ -15,6 +15,7 @@ class DtlsSocket extends stream.Duplex {
 		this.remoteAddress = address;
 		this.remotePort = port;
 		this._hadError = false;
+		this._sendClose = true;
 		const key = `${address}:${port}`;
 
 		this.mbedSocket = new mbed.DtlsSocket(server.mbedServer, key,
@@ -35,6 +36,13 @@ class DtlsSocket extends stream.Duplex {
 	}
 	get session() {
 		return this.mbedSocket.session;
+	}
+
+	get sendClose() {
+		return this._sendClose;
+	}
+	set sendClose(value) {
+		this._sendClose = value;
 	}
 
 	resumeSession(session) {
@@ -144,14 +152,6 @@ class DtlsSocket extends stream.Duplex {
 		this.resumed = true;
 	}
 
-	_newSessionCallback(err) {
-		if (err) {
-			this._end();
-			return;
-		}
-		this.mbedSocket.newSession();
-	}
-
 	receive(msg) {
 		if (!this.mbedSocket) {
 			return false;
@@ -184,7 +184,7 @@ class DtlsSocket extends stream.Duplex {
 
 		super.end();
 		this.push(null);
-		const noSend = this.mbedSocket.close();
+		const noSend = !this._sendClose || this.mbedSocket.close();
 		this.emit('closing');
 		this.mbedSocket = null;
 		if (noSend || !this._clientEnd) {

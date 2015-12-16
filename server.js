@@ -10,7 +10,9 @@ var mbed = require('./build/Release/node_mbed_dtls');
 class DtlsServer extends EventEmitter {
 	constructor(options) {
 		super();
-		options = options || {};
+		this.options = options = Object.assign({
+			sendClose: true
+		}, options);
 
 		this.sockets = {};
 		this.dgramSocket = dgram.createSocket('udp4');
@@ -102,6 +104,7 @@ class DtlsServer extends EventEmitter {
 
 	_createSocket(rinfo, key) {
 		var client = new DtlsSocket(this, rinfo.address, rinfo.port);
+		client.sendClose = this.options.sendClose;
 		this._attachToSocket(client, key);
 		return client;
 	}
