@@ -1,3 +1,7 @@
+# 2.2.4
+
+* Add options to turn on/off sending `close_notify` alerts
+
 # 2.2.3
 
 * Fix segfault caused by accessing SessionWrap variables directly
