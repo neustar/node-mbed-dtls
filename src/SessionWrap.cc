@@ -90,7 +90,7 @@ NAN_SETTER(SessionWrap::SetCiphersuite) {
 
 NAN_GETTER(SessionWrap::GetRandomBytes) {
 	SessionWrap *session = Nan::ObjectWrap::Unwrap<SessionWrap>(info.This());
-	info.GetReturnValue().Set(Nan::NewBuffer((char *)session->randbytes, 64).ToLocalChecked());
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)session->randbytes, 64).ToLocalChecked());
 }
 
 NAN_SETTER(SessionWrap::SetRandomBytes) {
@@ -101,7 +101,7 @@ NAN_SETTER(SessionWrap::SetRandomBytes) {
 
 NAN_GETTER(SessionWrap::GetId) {
 	SessionWrap *session = Nan::ObjectWrap::Unwrap<SessionWrap>(info.This());
-	info.GetReturnValue().Set(Nan::NewBuffer((char *)session->id, session->id_len).ToLocalChecked());
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)session->id, session->id_len).ToLocalChecked());
 }
 
 NAN_SETTER(SessionWrap::SetId) {
@@ -113,7 +113,7 @@ NAN_SETTER(SessionWrap::SetId) {
 
 NAN_GETTER(SessionWrap::GetMaster) {
 	SessionWrap *session = Nan::ObjectWrap::Unwrap<SessionWrap>(info.This());
-	info.GetReturnValue().Set(Nan::NewBuffer((char *)session->master, 48).ToLocalChecked());
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)session->master, 48).ToLocalChecked());
 }
 
 NAN_SETTER(SessionWrap::SetMaster) {
@@ -135,7 +135,7 @@ NAN_SETTER(SessionWrap::SetInEpoch) {
 
 NAN_GETTER(SessionWrap::GetOutCounter) {
 	SessionWrap *session = Nan::ObjectWrap::Unwrap<SessionWrap>(info.This());
-	info.GetReturnValue().Set(Nan::NewBuffer((char *)session->out_ctr, 8).ToLocalChecked());
+	info.GetReturnValue().Set(Nan::CopyBuffer((char *)session->out_ctr, 8).ToLocalChecked());
 }
 
 NAN_SETTER(SessionWrap::SetOutCounter) {
