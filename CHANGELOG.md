@@ -1,3 +1,7 @@
+# 2.2.3
+
+* Fix segfault caused by accessing SessionWrap variables directly
+
 # 2.2.2
 
 * Fix invalid access to `msg.length` on `socket.receive`
