@@ -177,6 +177,8 @@ class DtlsSocket extends stream.Duplex {
 	reset() {
 		this.emit('close', false);
 		this.removeAllListeners();
+		this.resumed = false;
+		this.connected = false;
 	}
 
 	_end() {
