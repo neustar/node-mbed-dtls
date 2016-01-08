@@ -1,3 +1,7 @@
+# 2.2.8
+
+* Allow undefined buffer receive calls
+
 # 2.2.7
 
 * Check for valid receive buffer
