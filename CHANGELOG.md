@@ -1,3 +1,7 @@
+# 2.2.6
+
+* Filter obviously invalid packets based on size
+
 # 2.2.5
 
 * Don't send alerts on any invalid MAC
