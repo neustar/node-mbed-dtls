@@ -1,3 +1,7 @@
+# 2.2.9
+
+* Properly unset flags on reset
+
 # 2.2.8
 
 * Allow undefined buffer receive calls
