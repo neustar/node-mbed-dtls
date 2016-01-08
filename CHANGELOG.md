@@ -1,3 +1,7 @@
+# 2.2.7
+
+* Check for valid receive buffer
+
 # 2.2.6
 
 * Filter obviously invalid packets based on size
