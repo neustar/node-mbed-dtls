@@ -156,11 +156,11 @@ class DtlsSocket extends stream.Duplex {
 		if (!this.mbedSocket) {
 			return false;
 		}
-		if (msg.length < 4) {
+		if (!msg || msg.length < 4) {
 			return false;
 		}
 
-		this.emit('receive', (msg && msg.length) || 0);
+		this.emit('receive', msg.length);
 		const data = this.mbedSocket.receiveData(msg);
 		if (data) {
 			this.push(data);
