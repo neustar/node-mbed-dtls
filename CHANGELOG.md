@@ -1,3 +1,7 @@
+# 2.2.5
+
+* Don't send alerts on any invalid MAC
+
 # 2.2.4
 
 * Add options to turn on/off sending `close_notify` alerts
