@@ -68,6 +68,21 @@ class DtlsServer extends EventEmitter {
 		process.nextTick(callback, null, numConnections);
 	}
 
+	resumeSocket(rinfo, session) {
+		const key = `${rinfo.address}:${rinfo.port}`;
+		let client = this.sockets[key];
+		if (client) {
+			return false;
+		}
+
+		this.sockets[key] = client = this._createSocket(rinfo, key);
+		if (client.resumeSession(session)) {
+			this.emit('secureConnection', client, session);
+			return true;
+		}
+		return false;
+	}
+
 	_onMessage(msg, rinfo) {
 		const key = `${rinfo.address}:${rinfo.port}`;
 
