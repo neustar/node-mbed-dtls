@@ -46,8 +46,8 @@ class DtlsSocket extends stream.Duplex {
 	}
 
 	resumeSession(session) {
-		if (!session) {
-			return;
+		if (!session || !this.mbedSocket) {
+			return false;
 		}
 
 		const s = new mbed.SessionWrap();
