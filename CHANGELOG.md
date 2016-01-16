@@ -1,3 +1,7 @@
+# 2.3.1
+
+* Guard `resumeSession` by checking for `mbedSocket`.
+
 # 2.3.0
 
 * Add `resumeSocket` method to server. This allows socket resumption without needing to receive a message.
