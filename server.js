@@ -75,9 +75,9 @@ class DtlsServer extends EventEmitter {
 			return false;
 		}
 
-		this.sockets[key] = client = this._createSocket(rinfo, key);
+		this.sockets[key] = client = this._createSocket(rinfo, key, true);
 		if (client.resumeSession(session)) {
-			this.emit('secureConnection', client, session, true);
+			this.emit('secureConnection', client, session);
 			return true;
 		}
 		return false;
@@ -117,9 +117,10 @@ class DtlsServer extends EventEmitter {
 		client.receive(msg);
 	}
 
-	_createSocket(rinfo, key) {
+	_createSocket(rinfo, key, selfRestored) {
 		var client = new DtlsSocket(this, rinfo.address, rinfo.port);
 		client.sendClose = this.options.sendClose;
+		client.selfRestored = selfRestored;
 		this._attachToSocket(client, key);
 		return client;
 	}
