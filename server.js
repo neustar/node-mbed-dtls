@@ -77,7 +77,7 @@ class DtlsServer extends EventEmitter {
 
 		this.sockets[key] = client = this._createSocket(rinfo, key);
 		if (client.resumeSession(session)) {
-			this.emit('secureConnection', client, session);
+			this.emit('secureConnection', client, session, true);
 			return true;
 		}
 		return false;
