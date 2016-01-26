@@ -1,3 +1,7 @@
+# 2.3.3
+
+* Set `selfRestored` property on socket instead of passing through events.
+
 # 2.3.2
 
 * Include flag in `secureConnection` event indicating the connection was self restored.
