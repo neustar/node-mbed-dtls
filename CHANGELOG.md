@@ -1,3 +1,7 @@
+# 2.3.2
+
+* Include flag in `secureConnection` event indicating the connection was self restored.
+
 # 2.3.1
 
 * Guard `resumeSession` by checking for `mbedSocket`.
