@@ -65,7 +65,7 @@ class DtlsServer extends EventEmitter {
 		var numConnections = Object.keys(this.sockets).filter(skey => {
 			return this.sockets[skey] && this.sockets[skey].connected;
 		}).length;
-		process.nextTick(callback, null, numConnections);
+		process.nextTick(() => callback(numConnections));
 	}
 
 	resumeSocket(rinfo, session) {
