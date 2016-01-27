@@ -1,3 +1,7 @@
+# 2.3.4
+
+* Fix `getConnections` callback.
+
 # 2.3.3
 
 * Set `selfRestored` property on socket instead of passing through events.
