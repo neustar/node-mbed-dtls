@@ -83,8 +83,75 @@ class DtlsServer extends EventEmitter {
 		return false;
 	}
 
-	_onMessage(msg, rinfo) {
+	_handleIpChange(msg, key, rinfo, deviceId) {
+		const lookedUp = this.emit('lookupKey', deviceId, (err, oldRinfo) => {
+			if (!err && oldRinfo) {
+				this._onMessage(msg, oldRinfo, (client, received) => {
+					// if the message went through OK
+					if (received) {
+						// change IP
+						client.remoteAddress = rinfo.address;
+						client.remotePort = rinfo.port;
+						// move in lookup table
+						this.sockets[key] = client;
+						const oldKey = `${oldRinfo.address}:${oldRinfo.port}`;
+						delete this.sockets[oldKey];
+						// tell the world
+						client.emit('ipChanged', oldRinfo);
+					}
+				});
+			}
+		});
+		return lookedUp;
+	}
+
+	_attemptResume(client, msg, key, cb) {
+		const lcb = cb || (() => {});
+		const called = this.emit('resumeSession', key, client, (err, session) => {
+			if (!err && session) {
+				const resumed = client.resumeSession(session);
+				if (resumed) {
+					client.cork();
+
+					const received = client.receive(msg);
+					// callback before secureConnection so
+					// IP can be changed
+					lcb(client, received);
+					if (received) {
+						this.emit('secureConnection', client, session);
+					}
+
+					client.uncork();
+					return;
+				}
+			}
+			client.receive(msg);
+			lcb(null, false);
+		});
+
+		// if somebody was listening, session will attempt to be resumed
+		// do not process with receive until resume finishes
+		return called;
+	}
+
+	_onMessage(msg, rinfo, cb) {
 		const key = `${rinfo.address}:${rinfo.port}`;
+
+		// special IP changed content type
+		if (msg.length > 0 && msg[0] === 254) {
+			rinfo.port = 7777;
+			const idLen = msg[msg.length - 1];
+			const idStartIndex = msg.length - idLen - 1;
+			const deviceId = msg.slice(idStartIndex, idStartIndex + idLen).toString('hex').toLowerCase();
+
+			// slice off id and length, return content type to ApplicationData
+			msg = msg.slice(0, idStartIndex);
+			msg[0] = 23;
+
+			if (this._handleIpChange(msg, key, rinfo, deviceId)) {
+				return;
+			}
+		}
 
 		let client = this.sockets[key];
 		if (!client) {
@@ -92,29 +159,22 @@ class DtlsServer extends EventEmitter {
 
 			// if ApplicationData (23)
 			if (msg.length > 0 && msg[0] === 23) {
-				const called = this.emit('resumeSession', key, client, (err, session) => {
-					if (!err && session) {
-						if (client.resumeSession(session)) {
-							client.cork();
-							if (client.receive(msg)) {
-								this.emit('secureConnection', client, session);
-							}
-							client.uncork();
-							return;
-						}
-					}
-					client.receive(msg);
-				});
-
-				// if somebody was listening, session will attempt to be resumed
-				// do not process with receive until resume finishes
-				if (called) {
+				if (this._attemptResume(client, msg, key, cb)) {
 					return;
 				}
 			}
 		}
 
-		client.receive(msg);
+		if (cb) {
+			// we cork because we want the callback to happen
+			// before the implications of the message do
+			client.cork();
+			const received = client.receive(msg);
+			cb(client, received);
+			client.uncork();
+		} else {
+			client.receive(msg);
+		}
 	}
 
 	_createSocket(rinfo, key, selfRestored) {

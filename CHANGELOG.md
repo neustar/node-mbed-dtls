@@ -1,3 +1,7 @@
+# 2.4.0
+
+* Handle DTLS packets with content type of 254 as IP change packets.
+
 # 2.3.4
 
 * Fix `getConnections` callback.
