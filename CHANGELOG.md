@@ -1,3 +1,7 @@
+# 2.4.3
+
+* Fix copy-pasta bug
+
 # 2.4.2
 
 * Only handle as an IP change if the IP actually changed.
