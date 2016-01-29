@@ -1,3 +1,7 @@
+# 2.4.1
+
+* Remove debug code.
+
 # 2.4.0
 
 * Handle DTLS packets with content type of 254 as IP change packets.
