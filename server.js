@@ -7,6 +7,9 @@ var EventEmitter = require('events').EventEmitter;
 var DtlsSocket = require('./socket');
 var mbed = require('./build/Release/node_mbed_dtls');
 
+const APPLICATION_DATA_CONTENT_TYPE = 23;
+const IP_CHANGE_CONTENT_TYPE = 23;
+
 class DtlsServer extends EventEmitter {
 	constructor(options) {
 		super();
@@ -145,14 +148,14 @@ class DtlsServer extends EventEmitter {
 		const key = `${rinfo.address}:${rinfo.port}`;
 
 		// special IP changed content type
-		if (msg.length > 0 && msg[0] === 254) {
+		if (msg.length > 0 && msg[0] === IP_CHANGE_CONTENT_TYPE) {
 			const idLen = msg[msg.length - 1];
 			const idStartIndex = msg.length - idLen - 1;
 			const deviceId = msg.slice(idStartIndex, idStartIndex + idLen).toString('hex').toLowerCase();
 
 			// slice off id and length, return content type to ApplicationData
 			msg = msg.slice(0, idStartIndex);
-			msg[0] = 23;
+			msg[0] = APPLICATION_DATA_CONTENT_TYPE;
 
 			if (this._handleIpChange(msg, key, rinfo, deviceId)) {
 				return;
@@ -163,8 +166,7 @@ class DtlsServer extends EventEmitter {
 		if (!client) {
 			this.sockets[key] = client = this._createSocket(rinfo, key);
 
-			// if ApplicationData (23)
-			if (msg.length > 0 && msg[0] === 23) {
+			if (msg.length > 0 && msg[0] === APPLICATION_DATA_CONTENT_TYPE) {
 				if (this._attemptResume(client, msg, key, cb)) {
 					return;
 				}
