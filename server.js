@@ -86,6 +86,13 @@ class DtlsServer extends EventEmitter {
 	_handleIpChange(msg, key, rinfo, deviceId) {
 		const lookedUp = this.emit('lookupKey', deviceId, (err, oldRinfo) => {
 			if (!err && oldRinfo) {
+				// if the IP hasn't actually changed, handle normally
+				if (rinfo.address === oldRinfo.address &&
+						rinfo.port === oldRinfo.port) {
+					this._onMessage(msg, rinfo);
+					return;
+				}
+
 				this._onMessage(msg, oldRinfo, (client, received) => {
 					// if the message went through OK
 					if (received) {
