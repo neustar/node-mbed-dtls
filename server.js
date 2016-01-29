@@ -8,7 +8,7 @@ var DtlsSocket = require('./socket');
 var mbed = require('./build/Release/node_mbed_dtls');
 
 const APPLICATION_DATA_CONTENT_TYPE = 23;
-const IP_CHANGE_CONTENT_TYPE = 23;
+const IP_CHANGE_CONTENT_TYPE = 254;
 
 class DtlsServer extends EventEmitter {
 	constructor(options) {
