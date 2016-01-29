@@ -139,7 +139,6 @@ class DtlsServer extends EventEmitter {
 
 		// special IP changed content type
 		if (msg.length > 0 && msg[0] === 254) {
-			rinfo.port = 7777;
 			const idLen = msg[msg.length - 1];
 			const idStartIndex = msg.length - idLen - 1;
 			const deviceId = msg.slice(idStartIndex, idStartIndex + idLen).toString('hex').toLowerCase();
