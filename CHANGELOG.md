@@ -1,3 +1,7 @@
+# 2.4.4
+
+* Add some debug loggin
+
 # 2.4.3
 
 * Fix copy-pasta bug
