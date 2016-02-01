@@ -86,12 +86,19 @@ class DtlsServer extends EventEmitter {
 		return false;
 	}
 
+	_debug() {
+		if (this.options.debug) {
+			console.log(...arguments);
+		}
+	}
+
 	_handleIpChange(msg, key, rinfo, deviceId) {
 		const lookedUp = this.emit('lookupKey', deviceId, (err, oldRinfo) => {
 			if (!err && oldRinfo) {
 				// if the IP hasn't actually changed, handle normally
 				if (rinfo.address === oldRinfo.address &&
 						rinfo.port === oldRinfo.port) {
+					this._debug(`ignoring ip change because address did not change ip=${key}, deviceID=${deviceId}`);
 					this._onMessage(msg, rinfo);
 					return;
 				}
@@ -99,12 +106,13 @@ class DtlsServer extends EventEmitter {
 				this._onMessage(msg, oldRinfo, (client, received) => {
 					// if the message went through OK
 					if (received) {
+						const oldKey = `${oldRinfo.address}:${oldRinfo.port}`;
+						this._debug(`message successfully received, changing ip address fromip=${oldKey}, toip=${key}, deviceID=${deviceId}`);
 						// change IP
 						client.remoteAddress = rinfo.address;
 						client.remotePort = rinfo.port;
 						// move in lookup table
 						this.sockets[key] = client;
-						const oldKey = `${oldRinfo.address}:${oldRinfo.port}`;
 						delete this.sockets[oldKey];
 						// tell the world
 						client.emit('ipChanged', oldRinfo);
@@ -157,6 +165,7 @@ class DtlsServer extends EventEmitter {
 			msg = msg.slice(0, idStartIndex);
 			msg[0] = APPLICATION_DATA_CONTENT_TYPE;
 
+			this._debug(`received ip change ip=${key}, deviceID=${deviceId}`);
 			if (this._handleIpChange(msg, key, rinfo, deviceId)) {
 				return;
 			}
