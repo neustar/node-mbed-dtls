@@ -4,6 +4,7 @@
 #include <node.h>
 #include <nan.h>
 
+#include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/timing.h"
 

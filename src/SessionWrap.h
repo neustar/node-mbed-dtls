@@ -4,6 +4,7 @@
 #include <node.h>
 #include <nan.h>
 
+#include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 
 class SessionWrap : public Nan::ObjectWrap {

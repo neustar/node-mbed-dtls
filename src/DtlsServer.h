@@ -4,10 +4,12 @@
 #include <node.h>
 #include <nan.h>
 
+// NOTE: These include files are order-sensitive!
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/certs.h"
 #include "mbedtls/x509.h"
+#include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_cookie.h"
 #include "mbedtls/error.h"
