@@ -5,7 +5,7 @@ var dtls = require('../index');
 
 const opts = {
 	key: path.join(__dirname, '../test/private.der'),
-	debug: 5,
+	debug: 4,
 	handshakeTimeoutMin: 3000
 };
 
@@ -48,4 +48,4 @@ dtlsserver.on('resumeSession', (sessionId, callback) => {
 		callback(null, null);
 	});
 });
-dtlsserver.listen(5683);
+dtlsserver.listen(5684);
