@@ -1,7 +1,3 @@
-/*
- * Minimal configuration for DTLS 1.2 with Raw Public Key and AES-CCM ciphersuites
- * See README.txt for usage instructions.
- */
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
 
@@ -11,32 +7,22 @@
 
 #define MBEDTLS_SSL_SRV_C
 
-
-/* System support */
-//#define MBEDTLS_HAVE_TIME /* Optionally used in Hello messages */
-/* Other MBEDTLS_HAVE_XXX flags irrelevant for this configuration */
-
 #define MBEDTLS_HAVE_ASM
 #define MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME_DATE
 #define MBEDTLS_DEPRECATED_REMOVED
 
-/* mbed TLS feature support */
-
-// TODO maybe MBEDTLS_AES_ALT and use OpenSSL from node?
-#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
-#define MBEDTLS_ECP_NIST_OPTIM
-#define MBEDTLS_ECDSA_DETERMINISTIC
-
-#define MBEDTLS_SSL_PROTO_TLS1_2
-#define MBEDTLS_SSL_DTLS_HANDSHAKE_QUEUE
-#define MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT
-
-
 /* Symmetric cipher block modes. */
 #define MBEDTLS_CIPHER_MODE_CBC
 #define MBEDTLS_CIPHER_MODE_CFB
 #define MBEDTLS_CIPHER_MODE_CTR
+
+// TODO maybe MBEDTLS_AES_ALT and use OpenSSL from node?
+//#define MBEDTLS_ECP_NIST_OPTIM
+//#define MBEDTLS_ECDSA_DETERMINISTIC
+
+#define MBEDTLS_SSL_PROTO_TLS1_2
+#define MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT
 
 /* ECC curves. */
 #define MBEDTLS_ECP_DP_SECP192R1_ENABLED
@@ -47,9 +33,9 @@
 #define MBEDTLS_ECP_DP_SECP192K1_ENABLED
 #define MBEDTLS_ECP_DP_SECP224K1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
-#define MBEDTLS_ECP_DP_BP256R1_ENABLED
-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
+//#define MBEDTLS_ECP_DP_BP256R1_ENABLED
+//#define MBEDTLS_ECP_DP_BP384R1_ENABLED
+//#define MBEDTLS_ECP_DP_BP512R1_ENABLED
 #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
 
 #define MBEDTLS_ECDSA_DETERMINISTIC
@@ -58,15 +44,14 @@
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
-#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-#define MBEDTLS_PK_PARSE_EC_EXTENDED
+//#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+//#define MBEDTLS_PK_PARSE_EC_EXTENDED
 
 
 #define MBEDTLS_SSL_DEBUG_ALL
 #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 #define MBEDTLS_SSL_FALLBACK_SCSV
-//#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
 #define MBEDTLS_SSL_RENEGOTIATION
 #define MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
@@ -77,10 +62,11 @@
 #define MBEDTLS_SSL_PROTO_DTLS
 #define MBEDTLS_SSL_DTLS_ANTI_REPLAY
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
-//#define MBEDTLS_SSL_DTLS_CLIENT_PORT_REUSE
+#define MBEDTLS_SSL_DTLS_CLIENT_PORT_REUSE
 #define MBEDTLS_SSL_DTLS_BADMAC_LIMIT
+//#define MBEDTLS_SSL_DTLS_HANDSHAKE_QUEUE
 
-#define MBEDTLS_SSL_SESSION_TICKETS
+//#define MBEDTLS_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_EXPORT_KEYS
 #define MBEDTLS_SSL_SERVER_NAME_INDICATION
 #define MBEDTLS_SSL_TRUNCATED_HMAC
@@ -125,13 +111,13 @@
 
 #define MBEDTLS_PLATFORM_C
 
-#define MBEDTLS_RIPEMD160_C
+//#define MBEDTLS_RIPEMD160_C
 #define MBEDTLS_SHA1_C
 #define MBEDTLS_SHA256_C
-#define MBEDTLS_SHA512_C
+//#define MBEDTLS_SHA512_C
 
 #define MBEDTLS_SSL_COOKIE_C
-#define MBEDTLS_SSL_TICKET_C
+//#define MBEDTLS_SSL_TICKET_C
 
 #define MBEDTLS_SSL_TLS_C
 #define MBEDTLS_TIMING_C
@@ -143,24 +129,6 @@
 
 #define MBEDTLS_XTEA_C
 
-
-/**
- * \def MBEDTLS_NET_C
- *
- * Enable the TCP and UDP over IPv6/IPv4 networking routines.
- *
- * \note This module only works on POSIX/Unix (including Linux, BSD and OS X)
- * and Windows. For other platforms, you'll want to disable it, and write your
- * own networking callbacks to be passed to \c mbedtls_ssl_set_bio().
- *
- * \note See also our Knowledge Base article about porting to a new
- * environment:
- * https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS
- *
- * Module:  library/net.c
- *
- * This module provides networking routines.
- */
 #define MBEDTLS_NET_C
 
 

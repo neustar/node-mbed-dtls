@@ -71,7 +71,11 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 #if defined(MBEDTLS_SSL_CACHE_C)
 	mbedtls_ssl_cache_init(&cache);
 #endif
-	mbedtls_x509_crt_init(&srvcert);
+	//mbedtls_x509_crt_init(&srvcert);
+  mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
+  int allowed_ciphersuites[] = {MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8, 0};
+  mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
+
 	mbedtls_pk_init(&pkey);
 	mbedtls_entropy_init(&entropy);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -107,8 +111,8 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 
-	ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
-	if (ret != 0) goto exit;
+	//ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
+	//if (ret != 0) goto exit;
 
 	ret = mbedtls_ssl_cookie_setup(&cookie_ctx,
 																 mbedtls_ctr_drbg_random,
@@ -148,7 +152,7 @@ void DtlsServer::throwError(int ret) {
 }
 
 DtlsServer::~DtlsServer() {
-	mbedtls_x509_crt_free( &srvcert );
+	//mbedtls_x509_crt_free( &srvcert );
 	mbedtls_pk_free( &pkey );
 	mbedtls_ssl_config_free( &conf );
 	mbedtls_ssl_cookie_free( &cookie_ctx );
