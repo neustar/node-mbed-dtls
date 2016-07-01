@@ -114,6 +114,7 @@
         "src/init.cc",
         "src/DtlsServer.cc",
         "src/DtlsSocket.cc",
+        "src/DtlsClientSocket.cc",
         "src/SessionWrap.cc"
       ],
       "include_dirs": [

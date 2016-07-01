@@ -1,6 +1,7 @@
 'use strict';
 
 var DtlsServer = require('./server');
+const DtlsSocket = require('./socket');
 
 function createServer(options, secureConnectionListener) {
 	options = options || {};
@@ -13,4 +14,14 @@ function createServer(options, secureConnectionListener) {
 	return server;
 }
 
-module.exports = { createServer };
+function connect(options, callback) {
+  const socket = new DtlsSocket(options);
+  if (callback) {
+    socket.once('secureConnect', callback);
+  }
+
+  return socket;
+}
+
+
+module.exports = { createServer, connect };

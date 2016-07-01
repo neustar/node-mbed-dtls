@@ -1,11 +1,13 @@
 
 #include "DtlsServer.h"
 #include "DtlsSocket.h"
+#include "DtlsClientSocket.h"
 #include "SessionWrap.h"
 
 NAN_MODULE_INIT(init) {
 	DtlsServer::Initialize(target);
-	DtlsSocket::Initialize(target);
+  DtlsSocket::Initialize(target);
+  DtlsClientSocket::InitializeClient(target);
 	SessionWrap::Initialize(target);
 }
 

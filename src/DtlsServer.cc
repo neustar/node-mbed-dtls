@@ -60,7 +60,6 @@ void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	info.GetReturnValue().Set(info.This());
 }
 
-int allowed_ciphersuites[] = {MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256, 0};
 
 
 DtlsServer::DtlsServer(const unsigned char *srv_key,
@@ -76,7 +75,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 #endif
 	//mbedtls_x509_crt_init(&srvcert);
   mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
-  mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
 
 	//mbedtls_pk_init(&pkey);
 	mbedtls_entropy_init(&entropy);
