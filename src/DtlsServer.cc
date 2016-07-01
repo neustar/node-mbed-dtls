@@ -60,6 +60,9 @@ void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 	info.GetReturnValue().Set(info.This());
 }
 
+int allowed_ciphersuites[] = {MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256, 0};
+
+
 DtlsServer::DtlsServer(const unsigned char *srv_key,
 											 size_t srv_key_len,
 											 int debug_level)
@@ -73,10 +76,9 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 #endif
 	//mbedtls_x509_crt_init(&srvcert);
   mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
-  int allowed_ciphersuites[] = {MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8, 0};
   mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
 
-	mbedtls_pk_init(&pkey);
+	//mbedtls_pk_init(&pkey);
 	mbedtls_entropy_init(&entropy);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 
@@ -84,25 +86,25 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 	mbedtls_debug_set_threshold(debug_level);
 #endif
 
-	ret = mbedtls_pk_parse_key(&pkey,
-														 (const unsigned char *)srv_key,
-														 srv_key_len,
-														 NULL,
-														 0);
+	//ret = mbedtls_pk_parse_key(&pkey,
+	//						 (const unsigned char *)srv_key,
+	//						 srv_key_len,
+	//						 NULL,
+	//						 0);
 	if (ret != 0) goto exit;
 
 	// TODO re-use node entropy and randomness
 	ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
-															mbedtls_entropy_func,
-															&entropy,
-															(const unsigned char *) pers,
-															strlen(pers));
+									mbedtls_entropy_func,
+									&entropy,
+									(const unsigned char *) pers,
+									strlen(pers));
 	if (ret != 0) goto exit;
 
 	ret = mbedtls_ssl_config_defaults(&conf,
-																		MBEDTLS_SSL_IS_SERVER,
-																		MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-																		MBEDTLS_SSL_PRESET_DEFAULT);
+									MBEDTLS_SSL_IS_SERVER,
+									MBEDTLS_SSL_TRANSPORT_DATAGRAM,
+									MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) goto exit;
 
 	mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
@@ -125,11 +127,7 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 																&cookie_ctx);
 
 	// needed for server to send CertificateRequest
-	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
-
-	//static int ssl_cert_types[] = { MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY, MBEDTLS_TLS_CERT_TYPE_NONE };
-	//mbedtls_ssl_conf_client_certificate_types(&conf, ssl_cert_types);
-	//mbedtls_ssl_conf_server_certificate_types(&conf, ssl_cert_types);
+	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
 
 	// turn off server sending Certificate
 	//mbedtls_ssl_conf_certificate_send(&conf, MBEDTLS_SSL_SEND_CERTIFICATE_DISABLED);
@@ -153,7 +151,7 @@ void DtlsServer::throwError(int ret) {
 
 DtlsServer::~DtlsServer() {
 	//mbedtls_x509_crt_free( &srvcert );
-	mbedtls_pk_free( &pkey );
+	//mbedtls_pk_free( &pkey );
 	mbedtls_ssl_config_free( &conf );
 	mbedtls_ssl_cookie_free( &cookie_ctx );
 #if defined(MBEDTLS_SSL_CACHE_C)

@@ -19,7 +19,7 @@
         "config"
       ],
       "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "MBEDTLS_CONFIG_FILE=\"node_dtls_conf.h\""
       ]
     },
     {
@@ -41,7 +41,7 @@
         "config"
       ],
       "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "MBEDTLS_CONFIG_FILE=\"node_dtls_conf.h\""
       ]
     },
     {
@@ -105,7 +105,7 @@
         "config"
       ],
       "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "MBEDTLS_CONFIG_FILE=\"node_dtls_conf.h\""
       ]
     },
     {
@@ -127,7 +127,7 @@
         "mbedcrypto"
       ],
       "defines": [
-        "MBEDTLS_CONFIG_FILE=\"config-ecc-ccm-rpk-dtls1_2.h\""
+        "MBEDTLS_CONFIG_FILE=\"node_dtls_conf.h\""
       ]
     }
   ]
