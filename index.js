@@ -4,14 +4,14 @@ var DtlsServer = require('./server');
 const DtlsClientSocket = require('./client_socket');
 
 function createServer(options, secureConnectionListener) {
-	options = options || {};
-	const server = new DtlsServer(options);
+  options = options || {};
+  const server = new DtlsServer(options);
 
-	if (secureConnectionListener) {
-		server.on('secureConnection', secureConnectionListener);
-	}
+  if (secureConnectionListener) {
+    server.on('secureConnection', secureConnectionListener);
+  }
 
-	return server;
+  return server;
 }
 
 function connect(options, callback) {
