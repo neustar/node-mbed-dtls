@@ -14,7 +14,7 @@
 class DtlsClientSocket : public Nan::ObjectWrap {
 public:
 	static Nan::Persistent<v8::FunctionTemplate> constructor;
-	static void InitializeClient(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
+	static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
 	static void New(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>& info);
 	static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);

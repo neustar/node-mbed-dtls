@@ -4,11 +4,11 @@ const stream = require('stream');
 const dgram = require('dgram');
 const fs = require('fs');
 
-const mbed = require('./build/Release/node_mbed_dtls_client');
+const mbed = require('./build/Release/node_mbed_dtls');
 
 const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
 
-class DtlsSocket extends stream.Duplex {
+class DtlsClientSocket extends stream.Duplex {
 	constructor(options) {
 		super({ allowHalfOpen: false });
 		options = options || {};
@@ -30,11 +30,12 @@ class DtlsSocket extends stream.Duplex {
 		const privateKey = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
 		const peerPublicKey = Buffer.isBuffer(options.peerPublicKey) ? options.peerPublicKey : fs.readFileSync(options.peerPublicKey);
 
-		this.mbedSocket = new mbed.DtlsSocket(privateKey, peerPublicKey,
-			this._sendEncrypted.bind(this),
-			this._handshakeComplete.bind(this),
-			this._error.bind(this),
-			options.debug);
+    this.mbedSocket = new mbed.DtlsClientSocket(
+      privateKey, peerPublicKey,
+      this._sendEncrypted.bind(this),
+      this._handshakeComplete.bind(this),
+      this._error.bind(this),
+      options.debug);
 
 		process.nextTick(() => {
 			this.mbedSocket.connect();
@@ -157,4 +158,4 @@ class DtlsSocket extends stream.Duplex {
 	}
 }
 
-module.exports = DtlsSocket;
+module.exports = DtlsClientSocket;

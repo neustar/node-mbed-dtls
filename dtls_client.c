@@ -1,4 +1,12 @@
 /*
+ * This is my pejorated mbed demo code. It is not relevant to the node-wrapper
+ * in any way. It is just a known-working program to test against.
+ * It will be discarded once the wrapper is validated.
+ *
+ * ---J. Ian Lindsay
+ */
+
+/*
  *  Simple DTLS client demonstration program
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved

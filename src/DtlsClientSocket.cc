@@ -24,7 +24,7 @@ static void my_debug( void *ctx, int level,
 Nan::Persistent<v8::FunctionTemplate> DtlsClientSocket::constructor;
 
 void
-DtlsClientSocket::InitializeClient(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
+DtlsClientSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 	Nan::HandleScope scope;
 
 	// Constructor

@@ -5,9 +5,9 @@
 #include "SessionWrap.h"
 
 NAN_MODULE_INIT(init) {
+  DtlsClientSocket::Initialize(target);
 	DtlsServer::Initialize(target);
   DtlsSocket::Initialize(target);
-  DtlsClientSocket::InitializeClient(target);
 	SessionWrap::Initialize(target);
 }
 
