@@ -22,10 +22,29 @@ static void my_debug( void *ctx, int level,
   fflush((FILE *) ctx);
 }
 
+
+/*
+ * Callback to get PSK given identity. Prevents us from having to hard-code
+ *   authorized keys.
+ */
+int fetchPSKGivenID(void *parameter, mbedtls_ssl_context *ssl, const unsigned char *psk_identity, size_t identity_len) {
+  //printf("PSK handler entry.\n");
+  // Normally, the code below would be a shunt into an HSM, local key store,
+  //   or some other means of storing keys securely.
+  // We hard-code for the moment to test.
+  if (0 == memcmp((const uint8_t*)psk_identity, (const uint8_t*)"32323232-3232-3232-3232-323232323232", identity_len)) {
+    mbedtls_ssl_set_hs_psk(ssl, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16);
+    //printf("PSK handler departure with success.\n");
+    return 0;
+  }
+  //printf("PSK handler departure with failure.\n");
+  return 1;
+}
+
+
 Nan::Persistent<v8::FunctionTemplate> DtlsServer::constructor;
 
-void
-DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
+void DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   Nan::HandleScope scope;
 
   // Constructor
@@ -73,10 +92,11 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
 #if defined(MBEDTLS_SSL_CACHE_C)
   mbedtls_ssl_cache_init(&cache);
 #endif
-  //mbedtls_x509_crt_init(&srvcert);
-  mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
+  mbedtls_x509_crt_init(&srvcert);
+  mbedtls_pk_init(&pkey);
 
-  //mbedtls_pk_init(&pkey);
+  mbedtls_ssl_conf_psk_cb(&conf, fetchPSKGivenID, NULL);
+  //mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
   mbedtls_entropy_init(&entropy);
   mbedtls_ctr_drbg_init(&ctr_drbg);
 
@@ -84,11 +104,11 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
   mbedtls_debug_set_threshold(debug_level);
 #endif
 
-  //ret = mbedtls_pk_parse_key(&pkey,
-  //             (const unsigned char *)srv_key,
-  //             srv_key_len,
-  //             NULL,
-  //             0);
+  ret = mbedtls_pk_parse_key(&pkey,
+               (const unsigned char *)srv_key,
+               srv_key_len,
+               NULL,
+               0);
   if (ret != 0) goto exit;
 
   // TODO re-use node entropy and randomness
@@ -111,8 +131,8 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
   mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 
-  //ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
-  //if (ret != 0) goto exit;
+  ret = mbedtls_ssl_conf_own_cert(&conf, &srvcert, &pkey);
+  if (ret != 0) goto exit;
 
   ret = mbedtls_ssl_cookie_setup(&cookie_ctx,
                                  mbedtls_ctr_drbg_random,
@@ -148,8 +168,8 @@ void DtlsServer::throwError(int ret) {
 }
 
 DtlsServer::~DtlsServer() {
-  //mbedtls_x509_crt_free( &srvcert );
-  //mbedtls_pk_free( &pkey );
+  mbedtls_x509_crt_free( &srvcert );
+  mbedtls_pk_free( &pkey );
   mbedtls_ssl_config_free( &conf );
   mbedtls_ssl_cookie_free( &cookie_ctx );
 #if defined(MBEDTLS_SSL_CACHE_C)

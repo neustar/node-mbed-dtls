@@ -38,7 +38,7 @@ private:
   mbedtls_entropy_context entropy;
   mbedtls_ctr_drbg_context ctr_drbg;
   mbedtls_ssl_config conf;
-  //mbedtls_x509_crt srvcert;
+  mbedtls_x509_crt srvcert;
   mbedtls_pk_context pkey;
 #if defined(MBEDTLS_SSL_CACHE_C)
   mbedtls_ssl_cache_context cache;

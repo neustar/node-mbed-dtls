@@ -13,8 +13,8 @@ using namespace node;
 
 
 int allowed_ciphersuites[] = {
-  MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
-  MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
+  //MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
+  //MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
   MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
   0
 };
@@ -149,7 +149,7 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
                                     MBEDTLS_SSL_TRANSPORT_DATAGRAM,
                                     MBEDTLS_SSL_PRESET_DEFAULT);
   if (ret != 0) goto exit;
-  //mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
+  mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
 
   mbedtls_x509_crt_init(&clicert);
   mbedtls_x509_crt_init(&cacert);

@@ -14,7 +14,7 @@ const options = {
   host: process.argv[2] || 'localhost',
   port: process.argv[3] || 5684,
   key: path.join(__dirname, '../test/cli_private.der'),
-  peerPublicKey: path.join(__dirname, '../test/serverPublicKey.der'),
+  peerPublicKey: path.join(__dirname, '../test/cli_public.der'),
   debug: 4
 };
 
