@@ -105,7 +105,7 @@ void DtlsClientSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
   int ret = socket->close();
   if (ret < 0) {
-    // TODO error?
+    mbedtls_printf("Unexpected return value from socket->close(): %d.\n", ret);
     return;
   }
 
@@ -121,6 +121,8 @@ void DtlsClientSocket::Send(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 void DtlsClientSocket::Connect(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
+  mbedtls_ssl_set_bio(&socket->ssl_context, socket, net_send_cli, net_recv_cli, NULL);
+
   socket->step();
 }
 
@@ -142,7 +144,23 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
   int ret;
   const char *pers = "dtls_client";
 
+  #if defined(MBEDTLS_DEBUG_C)
+    mbedtls_debug_set_threshold(debug_level);
+  #endif
+
   mbedtls_ssl_init(&ssl_context);
+  mbedtls_x509_crt_init(&clicert);
+  mbedtls_x509_crt_init(&cacert);
+  mbedtls_entropy_init(&entropy);
+  mbedtls_ctr_drbg_init(&ctr_drbg);
+
+  ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
+                              mbedtls_entropy_func,
+                              &entropy,
+                              (const unsigned char *) pers,
+                              strlen(pers));
+  if (ret != 0) goto exit;
+
   mbedtls_ssl_config_init(&conf);
   ret = mbedtls_ssl_config_defaults(&conf,
                                     MBEDTLS_SSL_IS_CLIENT,
@@ -151,23 +169,8 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
   if (ret != 0) goto exit;
   mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
 
-  mbedtls_x509_crt_init(&clicert);
-  mbedtls_x509_crt_init(&cacert);
 
   mbedtls_pk_init(&pkey);
-  mbedtls_entropy_init(&entropy);
-  mbedtls_ctr_drbg_init(&ctr_drbg);
-
-#if defined(MBEDTLS_DEBUG_C)
-  mbedtls_debug_set_threshold(debug_level);
-#endif
-
-  ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
-                              mbedtls_entropy_func,
-                              &entropy,
-                              (const unsigned char *) pers,
-                              strlen(pers));
-  if (ret != 0) goto exit;
 
   mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
@@ -192,12 +195,16 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
 
   if((ret = mbedtls_ssl_setup(&ssl_context, &conf)) != 0) goto exit;
 
-
   mbedtls_ssl_set_timer_cb(&ssl_context,
                            &timer,
                            mbedtls_timing_set_delay,
                            mbedtls_timing_get_delay);
-  mbedtls_ssl_set_bio(&ssl_context, this, net_send_cli, net_recv_cli, NULL);
+
+  // TODO: Below needs audit and (at minimum) a case-off.
+  if( ( ret = mbedtls_ssl_set_hostname(&ssl_context, "localhost" ) ) != 0 ) {
+    mbedtls_printf(" failed\n  ! mbedtls_ssl_set_hostname returned 0x%04x\n\n", ret);
+    goto exit;
+  }
 
   return;
 exit:
@@ -251,41 +258,70 @@ int DtlsClientSocket::receive_data(unsigned char *buf, int len) {
     }
     return ret;
   }
-
   return step();
 }
 
+
+const char* _mbedtls_state_to_string(int x) {
+  switch (x) {
+    case MBEDTLS_SSL_HELLO_REQUEST:                     return "HELLO_REQUEST";
+    case MBEDTLS_SSL_CLIENT_HELLO:                      return "CLIENT_HELLO";
+    case MBEDTLS_SSL_SERVER_HELLO:                      return "SERVER_HELLO";
+    case MBEDTLS_SSL_SERVER_CERTIFICATE:                return "SERVER_CERTIFICATE";
+    case MBEDTLS_SSL_SERVER_KEY_EXCHANGE:               return "SERVER_KEY_EXCHANGE";
+    case MBEDTLS_SSL_CERTIFICATE_REQUEST:               return "CERTIFICATE_REQUEST";
+    case MBEDTLS_SSL_SERVER_HELLO_DONE:                 return "SERVER_HELLO_DONE";
+    case MBEDTLS_SSL_CLIENT_CERTIFICATE:                return "CLIENT_CERTIFICATE";
+    case MBEDTLS_SSL_CLIENT_KEY_EXCHANGE:               return "CLIENT_KEY_EXCHANGE";
+    case MBEDTLS_SSL_CERTIFICATE_VERIFY:                return "CERTIFICATE_VERIFY";
+    case MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC:         return "CLIENT_CHANGE_CIPHER_SPEC";
+    case MBEDTLS_SSL_CLIENT_FINISHED:                   return "CLIENT_FINISHED";
+    case MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC:         return "SERVER_CHANGE_CIPHER_SPEC";
+    case MBEDTLS_SSL_SERVER_FINISHED:                   return "SERVER_FINISHED";
+    case MBEDTLS_SSL_FLUSH_BUFFERS:                     return "FLUSH_BUFFERS";
+    case MBEDTLS_SSL_HANDSHAKE_WRAPUP:                  return "HANDSHAKE_WRAPUP";
+    case MBEDTLS_SSL_HANDSHAKE_OVER:                    return "HANDSHAKE_OVER";
+    case MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET:         return "SERVER_NEW_SESSION_TICKET";
+    case MBEDTLS_SSL_SERVER_HELLO_VERIFY_REQUEST_SENT:  return "SERVER_HELLO_VERIFY_REQUEST_SENT";
+  }
+  return "UNKNOWN HANDSHAKE STATE";
+}
+
+
+
 int DtlsClientSocket::step() {
-  int ret;
-  // handshake
-  while (ssl_context.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-    ret = mbedtls_ssl_handshake_step(&ssl_context);
-    if (ret == 0) {
-      // in these states we are waiting for more input
-      if (
-        ssl_context.state == MBEDTLS_SSL_SERVER_HELLO ||
-        ssl_context.state == MBEDTLS_SSL_SERVER_KEY_EXCHANGE ||
-        ssl_context.state == MBEDTLS_SSL_CERTIFICATE_REQUEST ||
-        ssl_context.state == MBEDTLS_SSL_SERVER_HELLO_DONE ||
-        ssl_context.state == MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC ||
-        ssl_context.state == MBEDTLS_SSL_SERVER_FINISHED
-        ) {
+  mbedtls_printf("step() beginning\n");
+  int stacked_state = ssl_context.state;
+  if (stacked_state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+    int ret = mbedtls_ssl_handshake(&ssl_context);
+    switch (ret) {
+      case MBEDTLS_ERR_SSL_WANT_READ:
+      case MBEDTLS_ERR_SSL_WANT_WRITE:
+        // The library is still waiting on the net stack. Do nothing.
+        return ret;
+      case 0:
+        // The nominal outcome.
+        break;
+      default:
+        // Something went sideways during the handshake.
+        error(ret);
         return 0;
-      }
-      // keep looping to send everything
-      continue;
-    } else if (ret != 0) {
-      // bad things
-      error(ret);
-      return 0;
     }
   }
 
-  // this should only be called once when we first finish the handshake
-  v8::Local<v8::Function> handshakeCallbackDirect = handshake_cb->GetFunction();
-  handshakeCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 0, NULL);
+  if (stacked_state != ssl_context.state) {
+    mbedtls_printf("step() state %s --> %s.\n", _mbedtls_state_to_string(stacked_state), _mbedtls_state_to_string(ssl_context.state));
+  }
+
+  if (ssl_context.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
+    // this should only be called once when we first finish the handshake
+    v8::Local<v8::Function> handshakeCallbackDirect = handshake_cb->GetFunction();
+    handshakeCallbackDirect->Call(Nan::GetCurrentContext()->Global(), 0, NULL);
+  }
   return 0;
 }
+
+
 
 void DtlsClientSocket::throwError(int ret) {
   char error_buf[100];

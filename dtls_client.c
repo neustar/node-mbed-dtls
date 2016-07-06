@@ -191,8 +191,6 @@ int main( int argc, char *argv[] )
     mbedtls_printf( "  . Setting up the DTLS structure..." );
     fflush( stdout );
 
-    mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
-
     /* OPTIONAL is usually a bad choice for security, but makes interop easier
      * in this simplified example, in which the ca chain is hardcoded.
      * Production code should set a proper ca chain and use REQUIRED. */

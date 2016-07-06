@@ -8,6 +8,21 @@ const mbed = require('./build/Release/node_mbed_dtls');
 
 const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
 
+
+var send_safety_check = function(obj) {
+  // make absolutely sure the socket will let us send
+  if (!obj.dgramSocket || !obj.dgramSocket._handle) {
+    process.nextTick(() => {
+      send_safety_check(obj);
+    });
+    return;
+  }
+  else {
+    obj.mbedSocket.connect();
+  }
+}
+
+
 class DtlsClientSocket extends stream.Duplex {
   constructor(options) {
     super({ allowHalfOpen: false });
@@ -38,7 +53,7 @@ class DtlsClientSocket extends stream.Duplex {
       options.debug);
 
     process.nextTick(() => {
-      this.mbedSocket.connect();
+      send_safety_check(this);
     });
   }
 
