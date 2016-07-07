@@ -11,11 +11,13 @@ rl.setPrompt('<= ');
 const dtls = require('../index.js');
 
 const options = {
-  host: process.argv[2] || 'localhost',
-  port: process.argv[3] || 5684,
-  key: path.join(__dirname, '../test/cli_private.der'),
+  host:          process.argv[2] || 'localhost',
+  port:          process.argv[3] || 5684,
+  key:           path.join(__dirname, '../test/cli_private.der'),
   peerPublicKey: path.join(__dirname, '../test/cli_public.der'),
-  debug: 4
+  psk:           new Buffer("AAAAAAAAAAAAAAAA"),
+  PSKIdent:      new Buffer("32323232-3232-3232-3232-323232323232"),
+  debug:         4
 };
 
 let clientSocket = dtls.connect(options, socket => {

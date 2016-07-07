@@ -20,15 +20,15 @@ public:
   static void Close(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void Send(const Nan::FunctionCallbackInfo<v8::Value>& info);
   static void Connect(const Nan::FunctionCallbackInfo<v8::Value>& info);
-  DtlsClientSocket(const unsigned char *priv_key,
-             size_t priv_key_len,
-             const unsigned char *peer_pub_key,
-             size_t peer_pub_key_len,
+  DtlsClientSocket(
+             const unsigned char *priv_key,     size_t priv_key_len,
+             const unsigned char *peer_pub_key, size_t peer_pub_key_len,
+             const unsigned char *ca_pem,       size_t ca_pem_len,
+             const unsigned char *psk,          size_t psk_len,
+             const unsigned char *ident,        size_t ident_len,
              Nan::Callback* send_callback,
              Nan::Callback* hs_callback,
              Nan::Callback* error_callback,
-             const unsigned char *ca_pem,
-             size_t ca_pem_len,
              int debug_level);
   int recv(unsigned char *buf, size_t len);
   int receive_data(unsigned char *buf, int len);

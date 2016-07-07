@@ -62,26 +62,34 @@ void DtlsClientSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target)
 }
 
 void DtlsClientSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-  size_t priv_key_len = (NULL != Buffer::Data(info[0])) ? Buffer::Length(info[0]) : 0;
+  size_t priv_key_len     = (NULL != Buffer::Data(info[0])) ? Buffer::Length(info[0]) : 0;
   size_t peer_pub_key_len = (NULL != Buffer::Data(info[1])) ? Buffer::Length(info[1]) : 0;
+  size_t ca_len           = (info[2]->BooleanValue()) ? Buffer::Length(info[2]) : 0;
+  size_t psk_len          = (info[3]->BooleanValue()) ? Buffer::Length(info[3]) : 0;
+  size_t ident_len        = (info[4]->BooleanValue()) ? Buffer::Length(info[4]) : 0;
 
-  const unsigned char *priv_key = (const unsigned char *)Buffer::Data(info[0]);
-  const unsigned char *peer_pub_key = (const unsigned char *)Buffer::Data(info[1]);
+  const unsigned char* priv_key     = (priv_key_len)     ? (const unsigned char *) Buffer::Data(info[0]) : NULL;
+  const unsigned char* peer_pub_key = (peer_pub_key_len) ? (const unsigned char *) Buffer::Data(info[1]) : NULL;
+  const unsigned char* _ca_pem      = (ca_len)           ? (const unsigned char *) Buffer::Data(info[2]) : NULL;
+  const unsigned char* _psk         = (psk_len)          ? (const unsigned char *) Buffer::Data(info[3]) : NULL;
+  const unsigned char* _ident       = (ident_len)        ? (const unsigned char *) Buffer::Data(info[4]) : NULL;
 
-  Nan::Callback* send_cb = new Nan::Callback(info[2].As<v8::Function>());
-  Nan::Callback* hs_cb = new Nan::Callback(info[3].As<v8::Function>());
-  Nan::Callback* error_cb = new Nan::Callback(info[4].As<v8::Function>());
+  Nan::Callback* send_cb  = new Nan::Callback(info[5].As<v8::Function>());
+  Nan::Callback* hs_cb    = new Nan::Callback(info[6].As<v8::Function>());
+  Nan::Callback* error_cb = new Nan::Callback(info[7].As<v8::Function>());
 
   int debug_level = 0;
-  if (info.Length() > 5) {
-    debug_level = info[5]->Uint32Value();
+  if (info.Length() > 8) {
+    debug_level = info[8]->Uint32Value();
   }
 
   DtlsClientSocket *socket = new DtlsClientSocket(
     priv_key, priv_key_len,
     peer_pub_key, peer_pub_key_len,
+    _ca_pem, ca_len,
+    _psk,    psk_len,
+    _ident,  ident_len,
     send_cb, hs_cb, error_cb,
-    NULL, 0,
     debug_level);
   socket->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
@@ -114,7 +122,6 @@ void DtlsClientSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
 void DtlsClientSocket::Send(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
-
   const unsigned char *send_data = (const unsigned char *)Buffer::Data(info[0]);
   socket->send(send_data, Buffer::Length(info[0]));
 }
@@ -127,15 +134,15 @@ void DtlsClientSocket::Connect(const Nan::FunctionCallbackInfo<v8::Value>& info)
 }
 
 
-DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
-                       size_t priv_key_len,
-                       const unsigned char *peer_pub_key,
-                       size_t peer_pub_key_len,
+DtlsClientSocket::DtlsClientSocket(
+                       const unsigned char *priv_key,     size_t priv_key_len,
+                       const unsigned char *peer_pub_key, size_t peer_pub_key_len,
+                       const unsigned char *ca_pem,       size_t ca_pem_len,
+                       const unsigned char *psk,          size_t psk_len,
+                       const unsigned char *ident,        size_t ident_len,
                        Nan::Callback* send_callback,
                        Nan::Callback* hs_callback,
                        Nan::Callback* error_callback,
-                       const unsigned char *ca_pem,
-                       size_t ca_pem_len,
                        int debug_level)
     : Nan::ObjectWrap(),
     send_cb(send_callback),
@@ -169,13 +176,11 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
   if (ret != 0) goto exit;
   mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
 
-
   mbedtls_pk_init(&pkey);
 
   mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
   mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
-
 
   if ((NULL != ca_pem) && (ca_pem_len > 0)) {
     ret = mbedtls_x509_crt_parse(&cacert, (const unsigned char *) ca_pem, ca_pem_len);
@@ -183,13 +188,15 @@ DtlsClientSocket::DtlsClientSocket(const unsigned char *priv_key,
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
   }
 
-  if ((NULL != priv_key) && (ca_pem_len > 0)) {
+  if ((NULL != priv_key) && (priv_key_len > 0)) {
     ret = mbedtls_ssl_conf_own_cert(&conf, &clicert, &pkey);
     if (ret != 0) goto exit;
   }
 
-  ret = mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
-  if (ret != 0) goto exit;
+  if ((NULL != ident) && (NULL != psk)) {
+    ret = mbedtls_ssl_conf_psk(&conf, (const unsigned char*)psk, psk_len, (const unsigned char*) ident, ident_len);
+    if (ret != 0) goto exit;
+  }
 
   mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 

@@ -10,15 +10,15 @@ const MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY = -0x7880;
 
 
 var send_safety_check = function(obj) {
+  console.log("send_safety_check()\n");
   // make absolutely sure the socket will let us send
-  if (!obj.dgramSocket || !obj.dgramSocket._handle) {
+  if (obj.dgramSocket && obj.dgramSocket._handle) {
+    obj.mbedSocket.connect();
+  }
+  else {
     process.nextTick(() => {
       send_safety_check(obj);
     });
-    return;
-  }
-  else {
-    obj.mbedSocket.connect();
   }
 }
 
@@ -29,10 +29,10 @@ class DtlsClientSocket extends stream.Duplex {
     options = options || {};
 
     this.remoteAddress = options.host;
-    this.remotePort = options.port;
-    this.dgramSocket = options.socket || dgram.createSocket('udp4');
+    this.remotePort    = options.port;
+    this.dgramSocket   = options.socket || dgram.createSocket('udp4');
+    this._onMessage    = this._onMessage.bind(this);
 
-    this._onMessage = this._onMessage.bind(this);
     this.dgramSocket.on('message', this._onMessage);
     this.dgramSocket.once('error', err => {
       this.emit('error', err);
@@ -42,11 +42,17 @@ class DtlsClientSocket extends stream.Duplex {
       this._socketClosed();
     });
 
-    const privateKey = Buffer.isBuffer(options.key) ? options.key : fs.readFileSync(options.key);
+    const privateKey    = Buffer.isBuffer(options.key)           ? options.key : fs.readFileSync(options.key);
     const peerPublicKey = Buffer.isBuffer(options.peerPublicKey) ? options.peerPublicKey : fs.readFileSync(options.peerPublicKey);
+    const ca_cert       = Buffer.isBuffer(options.CACert)        ? options.CACert   : false;
+    const psk           = Buffer.isBuffer(options.psk)           ? options.psk      : false;
+    const psk_ident     = Buffer.isBuffer(options.PSKIdent)      ? options.PSKIdent : false;
 
     this.mbedSocket = new mbed.DtlsClientSocket(
-      privateKey, peerPublicKey,
+      privateKey, peerPublicKey,   // Keys
+      ca_cert,                     // CA
+      psk,                         // PSK
+      psk_ident,                   // PSK ident
       this._sendEncrypted.bind(this),
       this._handshakeComplete.bind(this),
       this._error.bind(this),
