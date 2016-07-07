@@ -11,6 +11,8 @@
 #include "mbedtls/timing.h"
 #include "mbedtls/debug.h"
 
+#define MAX_CIPHERSUITE_COUNT  30  // Number is arbitrary. Should be enough.
+
 class DtlsClientSocket : public Nan::ObjectWrap {
 public:
   static Nan::Persistent<v8::FunctionTemplate> constructor;
@@ -42,6 +44,8 @@ public:
 private:
   void throwError(int ret);
   ~DtlsClientSocket();
+
+  int allowed_ciphersuites[MAX_CIPHERSUITE_COUNT];
   Nan::Callback* send_cb;
   Nan::Callback* error_cb;
   Nan::Callback* handshake_cb;

@@ -11,15 +11,6 @@
 
 using namespace node;
 
-
-int allowed_ciphersuites[] = {
-  //MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
-  //MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
-  MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
-  0
-};
-
-
 static void my_debug( void *ctx, int level,
                       const char *file, int line,
                       const char *str )
@@ -61,9 +52,12 @@ void DtlsClientSocket::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target)
   Nan::Set(target, Nan::New("DtlsClientSocket").ToLocalChecked(), ctor->GetFunction());
 }
 
+/*
+ * Node wrapper to the client socket constructor.
+ */
 void DtlsClientSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-  size_t priv_key_len     = (NULL != Buffer::Data(info[0])) ? Buffer::Length(info[0]) : 0;
-  size_t peer_pub_key_len = (NULL != Buffer::Data(info[1])) ? Buffer::Length(info[1]) : 0;
+  size_t priv_key_len     = (info[0]->BooleanValue()) ? Buffer::Length(info[0]) : 0;
+  size_t peer_pub_key_len = (info[1]->BooleanValue()) ? Buffer::Length(info[1]) : 0;
   size_t ca_len           = (info[2]->BooleanValue()) ? Buffer::Length(info[2]) : 0;
   size_t psk_len          = (info[3]->BooleanValue()) ? Buffer::Length(info[3]) : 0;
   size_t ident_len        = (info[4]->BooleanValue()) ? Buffer::Length(info[4]) : 0;
@@ -95,6 +89,7 @@ void DtlsClientSocket::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   info.GetReturnValue().Set(info.This());
 }
 
+
 void DtlsClientSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
   const unsigned char *recv_data = (const unsigned char *)Buffer::Data(info[0]);
@@ -109,6 +104,7 @@ void DtlsClientSocket::ReceiveDataFromNode(const Nan::FunctionCallbackInfo<v8::V
   }
 }
 
+
 void DtlsClientSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
   int ret = socket->close();
@@ -120,16 +116,17 @@ void DtlsClientSocket::Close(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   info.GetReturnValue().Set(Nan::New(ret));
 }
 
+
 void DtlsClientSocket::Send(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
   const unsigned char *send_data = (const unsigned char *)Buffer::Data(info[0]);
   socket->send(send_data, Buffer::Length(info[0]));
 }
 
+
 void DtlsClientSocket::Connect(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   DtlsClientSocket *socket = Nan::ObjectWrap::Unwrap<DtlsClientSocket>(info.This());
   mbedtls_ssl_set_bio(&socket->ssl_context, socket, net_send_cli, net_recv_cli, NULL);
-
   socket->step();
 }
 
@@ -155,9 +152,23 @@ DtlsClientSocket::DtlsClientSocket(
     mbedtls_debug_set_threshold(debug_level);
   #endif
 
+  // mbedTLS will expect this array to be null-terminated. Zero it all...
+  for (int x = 0; x < MAX_CIPHERSUITE_COUNT; x++) allowed_ciphersuites[x] = 0;
+
+  /*
+  * This is essential for limiting the size of handshake packets. Many IoT
+  *   devices will only support a single ciphersuite, which may not be in this list.
+  * Therefore....
+  * TODO: Might-could automatically scope this down based on the provded credentials.
+  */
+  allowed_ciphersuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;   // IoTivity
+  //allowed_ciphersuites[1] = MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256;
+  //allowed_ciphersuites[2] = MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256;
+
   mbedtls_ssl_init(&ssl_context);
   mbedtls_x509_crt_init(&clicert);
   mbedtls_x509_crt_init(&cacert);
+  mbedtls_pk_init(&pkey);
   mbedtls_entropy_init(&entropy);
   mbedtls_ctr_drbg_init(&ctr_drbg);
 
@@ -175,8 +186,6 @@ DtlsClientSocket::DtlsClientSocket(
                                     MBEDTLS_SSL_PRESET_DEFAULT);
   if (ret != 0) goto exit;
   mbedtls_ssl_conf_ciphersuites(&conf, allowed_ciphersuites);
-
-  mbedtls_pk_init(&pkey);
 
   mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);

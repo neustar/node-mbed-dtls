@@ -13,8 +13,8 @@ const dtls = require('../index.js');
 const options = {
   host:          process.argv[2] || 'localhost',
   port:          process.argv[3] || 5684,
-  key:           path.join(__dirname, '../test/cli_private.der'),
-  peerPublicKey: path.join(__dirname, '../test/cli_public.der'),
+  key:           null, //path.join(__dirname, '../test/cli_private.der'),
+  peerPublicKey: null, //path.join(__dirname, '../test/cli_public.der'),
   psk:           new Buffer("AAAAAAAAAAAAAAAA"),
   PSKIdent:      new Buffer("32323232-3232-3232-3232-323232323232"),
   debug:         4

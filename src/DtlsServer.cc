@@ -96,7 +96,6 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
   mbedtls_pk_init(&pkey);
 
   mbedtls_ssl_conf_psk_cb(&conf, fetchPSKGivenID, NULL);
-  //mbedtls_ssl_conf_psk(&conf, (const unsigned char*)"AAAAAAAAAAAAAAAA", 16, (const unsigned char*)"32323232-3232-3232-3232-323232323232", 36);
   mbedtls_entropy_init(&entropy);
   mbedtls_ctr_drbg_init(&ctr_drbg);
 
@@ -145,10 +144,7 @@ DtlsServer::DtlsServer(const unsigned char *srv_key,
                                 &cookie_ctx);
 
   // needed for server to send CertificateRequest
-  mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
-
-  // turn off server sending Certificate
-  //mbedtls_ssl_conf_certificate_send(&conf, MBEDTLS_SSL_SEND_CERTIFICATE_DISABLED);
+  mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
   return;
 exit:

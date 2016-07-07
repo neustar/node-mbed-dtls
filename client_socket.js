@@ -42,21 +42,21 @@ class DtlsClientSocket extends stream.Duplex {
       this._socketClosed();
     });
 
-    const privateKey    = Buffer.isBuffer(options.key)           ? options.key : fs.readFileSync(options.key);
-    const peerPublicKey = Buffer.isBuffer(options.peerPublicKey) ? options.peerPublicKey : fs.readFileSync(options.peerPublicKey);
-    const ca_cert       = Buffer.isBuffer(options.CACert)        ? options.CACert   : false;
-    const psk           = Buffer.isBuffer(options.psk)           ? options.psk      : false;
-    const psk_ident     = Buffer.isBuffer(options.PSKIdent)      ? options.PSKIdent : false;
+    const privateKey    = Buffer.isBuffer(options.key)           ? options.key           : false;
+    const peerPublicKey = Buffer.isBuffer(options.peerPublicKey) ? options.peerPublicKey : false;
+    const ca_cert       = Buffer.isBuffer(options.CACert)        ? options.CACert        : false;
+    const psk           = Buffer.isBuffer(options.psk)           ? options.psk           : false;
+    const psk_ident     = Buffer.isBuffer(options.PSKIdent)      ? options.PSKIdent      : false;
 
     this.mbedSocket = new mbed.DtlsClientSocket(
-      privateKey, peerPublicKey,   // Keys
-      ca_cert,                     // CA
-      psk,                         // PSK
-      psk_ident,                   // PSK ident
-      this._sendEncrypted.bind(this),
-      this._handshakeComplete.bind(this),
-      this._error.bind(this),
-      options.debug);
+      privateKey, peerPublicKey,          // Keys (Buffers or FS paths)
+      ca_cert,                            // CA   (Buffer)
+      psk,                                // PSK  (Buffer)
+      psk_ident,                          // PSK ident (Buffer)
+      this._sendEncrypted.bind(this),     // Callback
+      this._handshakeComplete.bind(this), // Callback
+      this._error.bind(this),             // Callback
+      options.debug);                     // Verbosity (integer)
 
     process.nextTick(() => {
       send_safety_check(this);
