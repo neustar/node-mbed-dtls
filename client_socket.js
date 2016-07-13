@@ -63,6 +63,10 @@ class DtlsClientSocket extends stream.Duplex {
     });
   }
 
+  send(msg, offset, length, port, host, callback) {
+    write(msg, 10, callback);
+  }
+
   bind(port, address, callback) {
     this.dgramSocket.bind(port, address, callback);
   }
