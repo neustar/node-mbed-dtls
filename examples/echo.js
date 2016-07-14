@@ -26,26 +26,34 @@ const dtlsserver = dtls.createServer(opts, socket => {
     console.log(`closing socket from ${socket.remoteAddress}:${socket.remotePort}`);
   });
 });
+
 dtlsserver.on('clientError', err => {
   console.error(`clientError: ${err}`);
 });
+
 dtlsserver.on('error', err => {
   console.error(`server error: ${err}`);
 });
+
 dtlsserver.on('listening', () => {
   const addr = dtlsserver.address();
   console.log(`dtls listening on ${addr.address}:${addr.port}`);
 });
-dtlsserver.on('newSession', (sessionId, sessionData, callback) => {
-  console.log('*** new session callback ***', sessionId);
-  process.nextTick(() => {
-    callback();
-  });
-});
+
+// TODO: Not yet supported
+//dtlsserver.on('newSession', (sessionId, sessionData, callback) => {
+//  console.log('*** new session callback ***', sessionId);
+//  process.nextTick(() => {
+//    callback();
+//  });
+//});
+
 dtlsserver.on('resumeSession', (sessionId, callback) => {
   console.log('*** resume session callback ***', sessionId);
   process.nextTick(() => {
     callback(null, null);
   });
 });
-dtlsserver.listen(5684);
+
+
+dtlsserver.listen(5684);  // Actually begin listening.

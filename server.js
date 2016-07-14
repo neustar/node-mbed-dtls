@@ -13,7 +13,10 @@ const IP_CHANGE_CONTENT_TYPE = 254;
 class DtlsServer extends EventEmitter {
   constructor(options) {
     super();
-    this.options = options = Object.assign({
+
+    if(!options) options = {};  // Support no-parameter construction.
+
+    this.options = Object.assign({
       sendClose: true
     }, options);
 

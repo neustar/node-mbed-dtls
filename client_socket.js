@@ -26,7 +26,8 @@ var send_safety_check = function(obj) {
 class DtlsClientSocket extends stream.Duplex {
   constructor(options) {
     super({ allowHalfOpen: false });
-    options = options || {};
+
+    if(!options) options = {};  // Support no-parameter construction.
 
     this.remoteAddress = options.host;
     this.remotePort    = options.port;
