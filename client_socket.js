@@ -58,13 +58,13 @@ class DtlsClientSocket extends stream.Duplex {
       this._error.bind(this),             // Callback
       options.debug);                     // Verbosity (integer)
 
+    this.send = function(msg, offset, length, port, host, callback) {
+      this.mbedSocket.send(msg);
+    }
+
     process.nextTick(() => {
       send_safety_check(this);
     });
-  }
-
-  send(msg, offset, length, port, host, callback) {
-    write(msg, 10, callback);
   }
 
   bind(port, address, callback) {
@@ -94,6 +94,7 @@ class DtlsClientSocket extends stream.Duplex {
     this._sendCallback = callback;
     this.mbedSocket.send(chunk);
   }
+
 
   _sendEncrypted(msg) {
     // store the callback here because '_write' might be called
@@ -135,7 +136,7 @@ class DtlsClientSocket extends stream.Duplex {
       this._sendCallback(code);
       this._sendCallback = null;
     } else {
-      //this.emit('error', code, msg);
+      this.emit('error', code, msg);
       console.log('ERROR: '+code+'   ' + msg);
     }
     this._end();

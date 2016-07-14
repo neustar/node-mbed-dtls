@@ -23,6 +23,10 @@ class DtlsSocket extends stream.Duplex {
       this._handshakeComplete.bind(this),
       this._error.bind(this),
       this._renegotiate.bind(this));
+
+    this.send = function(msg, offset, length, port, host, callback) {
+      this.mbedSocket.send(msg);
+    }
   }
 
   get publicKey() {
@@ -66,7 +70,15 @@ class DtlsSocket extends stream.Duplex {
     // do nothing since chunk pushing is async
   }
 
+  /*
+   * For the sake of parity with node datagram API...
+   */
+//  send(msg, offset, length, port, host, callback) {
+//    _sendEncrypted(msg, 0, callback);
+//  }
+
   _write(chunk, encoding, callback) {
+    console.log("Srv instance socket send.\n");
     if (!this.mbedSocket) {
       return callback(new Error('no mbed socket'));
     }

@@ -23,11 +23,19 @@ static void my_debug( void *ctx, int level,
 
 int net_send_cli( void *ctx, const unsigned char *buf, size_t len ) {
   DtlsClientSocket* socket = (DtlsClientSocket*)ctx;
+  if (NULL == buf) {
+    printf("Tried to send from a NULL buffer!\n");
+    return 0;
+  }
   return socket->send_encrypted(buf, len);
 }
 
 int net_recv_cli( void *ctx, unsigned char *buf, size_t len ) {
   DtlsClientSocket* socket = (DtlsClientSocket*)ctx;
+  if (NULL == buf) {
+    printf("Tried to recv into a NULL buffer!\n");
+    return 0;
+  }
   return socket->recv(buf, len);
 }
 
@@ -147,6 +155,9 @@ DtlsClientSocket::DtlsClientSocket(
     handshake_cb(hs_callback) {
   int ret;
   const char *pers = "dtls_client";
+
+  recv_len = 0;
+  recv_buf = NULL;
 
   #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold(debug_level);

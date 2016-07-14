@@ -201,6 +201,9 @@ DtlsSocket::DtlsSocket(DtlsServer *server,
     session_wait(false) {
   int ret;
 
+  recv_len = 0;
+  recv_buf = NULL;
+
   if((ip = (unsigned char *)calloc(1, client_ip_len)) == NULL) {
     throwError(MBEDTLS_ERR_SSL_ALLOC_FAILED);
     return;
