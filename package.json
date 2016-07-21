@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha test/server.js",
+    "preinstall": "./downloadDeps.sh",
     "install": "node-gyp rebuild",
     "build": "node-gyp build",
     "start": "node index.js"
