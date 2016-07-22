@@ -1,15 +1,17 @@
-# node-mbed-dtls
-node DTLS (server and client) wrapping [mbedtls](https://github.com/ARMmbed/mbedtls)
+## node-mbed-dtls
+================
 
-###Lineage
+node DTLS (server and client) wrapping [mbedtls](https://github.com/ARMmbed/mbedtls).
+
+#### Lineage
 This package was forked from [Spark's original server implementation](https://github.com/spark/node-mbed-dtls) and merged with [their client implementation](https://github.com/spark/node-mbed-dtls-client).
 
-###Changes made to the fork:
+#### Changes made to the fork:
 The wrapped library is now pulled directly from ARMmbed's repo, rather than Spark's. The ciphersuites and API have been extended to allow PSK and CA certificates to be loaded at runtime, and on a per-instance basis.
 
 --------------
 
-##DTLS Client API:
+## DTLS Client API:
 
 Here is the scope of possible options, along with their default values.
 
@@ -26,11 +28,12 @@ Here is the scope of possible options, along with their default values.
     };
 
 The cryptographic parameters will likely change in the future as options are added for...
-  * TODO: Ciphersuite limitation/selection.
+  * TODO: Ciphersuite limitation/selection
   * TODO: Uniform key/id interface
-  * TODO: Conditional validation.
+  * TODO: Conditional validation
+  * TODO: Capability discovery
 
-####A client connection might emit...
+#### A client connection might emit...
 
 **error** when the connection has a problem.
 
@@ -53,7 +56,7 @@ The cryptographic parameters will likely change in the future as options are add
 
 --------------
 
-##DTLS Server API:
+## DTLS Server API:
 Here is the scope of possible server options, along with their default values.
 
     const options = {
@@ -63,7 +66,7 @@ Here is the scope of possible server options, along with their default values.
     };
 
 
-####General server emits....
+#### General server emits....
 
 **error** when the server has a problem.
 
@@ -83,7 +86,7 @@ Here is the scope of possible server options, along with their default values.
     server.on('listening', () => {});
 
 
-####Emits related to client handling...
+#### Emits related to client handling...
 
 **lookupKey** TODO: Doc forthcoming.
 
