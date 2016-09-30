@@ -5,7 +5,6 @@
       "type": "static_library",
       "sources": [
         "mbedtls/library/debug.c",
-        "mbedtls/library/net.c",
         "mbedtls/library/ssl_cache.c",
         "mbedtls/library/ssl_ciphersuites.c",
         "mbedtls/library/ssl_cli.c",

@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/datasnap/node-mbed-dtls.git"
+    "url": "git+https://github.com/neustar/node-mbed-dtls.git"
   },
   "devDependencies": {
     "mocha": "^2.3.3",
