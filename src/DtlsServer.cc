@@ -69,9 +69,16 @@ void DtlsServer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
 }
 
 void DtlsServer::New(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-  if (info.Length() < 1 ||
-      !Buffer::HasInstance(info[0])) {
+  if (info.Length() < 2) {
+    return Nan::ThrowTypeError("Expecting at least two parameters");
+  }
+
+  if (!Buffer::HasInstance(info[0])) {
     return Nan::ThrowTypeError("Expecting key to be a buffer");
+  }
+
+  if (info[1]->IsFunction() == false) {
+   return Nan::ThrowTypeError("Expecting param 2 to be a function"); 
   }
 
   size_t key_len = Buffer::Length(info[0]);
