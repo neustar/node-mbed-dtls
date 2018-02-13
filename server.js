@@ -14,7 +14,17 @@ class DtlsServer extends EventEmitter {
   constructor(options) {
     super();
 
-    if(!options) options = {};  // Support no-parameter construction.
+    if(!options) {
+      throw "Parameter options is not set";
+    }
+
+    if (options.key == undefined) {
+      throw "Parameter 'key' is not set";
+    }
+
+    if (options.identityPskCallback == undefined) {
+      throw "Parameter 'identityPskCallback' is not set";
+    }
 
     this.options = Object.assign({
       sendClose: true
@@ -45,7 +55,7 @@ class DtlsServer extends EventEmitter {
       key = Buffer.concat([key, new Buffer([0])]);
     }
 
-    this.mbedServer = new mbed.DtlsServer(key, options.debug);
+    this.mbedServer = new mbed.DtlsServer(key, options.identityPskCallback, options.debug);
     if (options.handshakeTimeoutMin) {
       this.mbedServer.handshakeTimeoutMin = options.handshakeTimeoutMin;
     }
