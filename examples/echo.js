@@ -3,9 +3,28 @@
 var path = require('path');
 var dtls = require('../index');
 
+function identityPskCallback(id) {
+  let psk = '';
+
+  switch (id)  {
+    case 'foo':
+      psk = 'asdasdadasd';
+      break;
+    case '32323232-3232-3232-3232-323232323232':
+      psk = 'AAAAAAAAAAAAAAAA';
+      break;
+    default:
+      psk = '';
+      break;
+  }
+
+  return psk;
+}
+
 const opts = {
   key: path.join(__dirname, '../test/private.der'),
   debug: 4,
+  identityPskCallback : identityPskCallback,
   handshakeTimeoutMin: 3000
 };
 
