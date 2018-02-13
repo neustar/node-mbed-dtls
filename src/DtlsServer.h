@@ -27,9 +27,11 @@ public:
   static NAN_SETTER(SetHandshakeTimeoutMin);
   DtlsServer(const unsigned char *srv_key,
              size_t srv_key_len,
+             Nan::Callback* get_psk_cb,
              int debug_level = 0);
   inline mbedtls_ssl_config* config() { return &conf; }
-
+  Nan::Callback* get_psk;
+  char *getPskFromIdentity(char *identity);
 private:
   void throwError(int ret);
   ~DtlsServer();
