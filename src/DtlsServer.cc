@@ -33,7 +33,7 @@ int fetchPSKGivenID(void *parameter, mbedtls_ssl_context *ssl, const unsigned ch
   DtlsServer *dtlsServer = (DtlsServer *)parameter;
 
   strncpy(pskIdentity,(char*)psk_identity,identity_len);
-  pskIdentity[identity_len+1] = '\0';
+  pskIdentity[identity_len]='\0';
 
   psk = dtlsServer->getPskFromIdentity(pskIdentity);
 
